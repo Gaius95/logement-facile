@@ -26,6 +26,37 @@ def conakry_media(filename: str):
         abort(404)
     return send_file(file_path)
 
+
+# Serve uploaded example images stored in Cursor workspace.
+# This is only for design previews (homepage hero background).
+CURSOR_ASSETS_DIR = os.path.abspath(
+    os.path.join(
+        app.root_path,
+        "..",
+        "..",
+        "..",
+        ".cursor",
+        "projects",
+        "c-Users-angie-OneDrive-Bureau-LOGEMENT-FACILE",
+        "assets",
+    )
+)
+
+
+@app.route("/cursor-assets/<path:filename>")
+def cursor_asset(filename: str):
+    # Prevent path traversal: only allow files inside CURSOR_ASSETS_DIR.
+    safe_name = os.path.basename(filename)
+    file_path = os.path.join(CURSOR_ASSETS_DIR, safe_name)
+    if os.path.isfile(file_path):
+        return send_file(file_path)
+
+    # Fallback so production still renders the homepage.
+    fallback_path = os.path.join(CONAKRY_MEDIA_DIR, "conakry.jpg")
+    if os.path.isfile(fallback_path):
+        return send_file(fallback_path)
+    abort(404)
+
 # DB: SQLite en local, Postgres via DATABASE_URL en prod (Render)
 db_url = os.environ.get("DATABASE_URL", "sqlite:///logement_facile.db")
 if db_url.startswith("postgres://"):
@@ -257,7 +288,43 @@ def safe_next_url() -> str | None:
 
 @app.route("/")
 def accueil():
-    return render_template("index.html", maisons=published_listings())
+    # Hero images:
+    # - Production: use files placed in `static images/` (hero1.png, hero2.png).
+    # - Local preview fallback: use the images you sent (Cursor assets).
+    # - Ultimate fallback: conakry.jpg
+    local_hero1 = (
+        "c__Users_angie_AppData_Roaming_Cursor_User_workspaceStorage_ebe89c2026160384c3311c4681a43649_images_"
+        "WhatsApp_Image_2026-03-19_at_17.41.18-231dac61-e367-4f60-a664-9731f24348d1.png"
+    )
+    local_hero2 = (
+        "c__Users_angie_AppData_Roaming_Cursor_User_workspaceStorage_ebe89c2026160384c3311c4681a43649_images_"
+        "WhatsApp_Image_2026-03-19_at_17.41.19-446a5e3b-41e4-43e0-b54a-ff6aefb86806.png"
+    )
+
+    def pick_static_hero(candidates: list[str]) -> str | None:
+        for name in candidates:
+            if os.path.isfile(os.path.join(CONAKRY_MEDIA_DIR, name)):
+                return name
+        return None
+
+    hero1_name = pick_static_hero(["hero1.png", "hero1.png.jpeg", "hero1.jpg", "hero1.jpeg", "hero1.webp"])
+    hero2_name = pick_static_hero(["hero2.png", "hero2.png.jpeg", "hero2.jpg", "hero2.jpeg", "hero2.webp"])
+
+    if hero1_name:
+        hero1_url = url_for("conakry_media", filename=hero1_name)
+    elif os.path.isfile(os.path.join(CURSOR_ASSETS_DIR, local_hero1)):
+        hero1_url = url_for("cursor_asset", filename=local_hero1)
+    else:
+        hero1_url = url_for("conakry_media", filename="conakry.jpg")
+
+    if hero2_name:
+        hero2_url = url_for("conakry_media", filename=hero2_name)
+    elif os.path.isfile(os.path.join(CURSOR_ASSETS_DIR, local_hero2)):
+        hero2_url = url_for("cursor_asset", filename=local_hero2)
+    else:
+        hero2_url = url_for("conakry_media", filename="conakry.jpg")
+
+    return render_template("index.html", maisons=published_listings(), hero1_url=hero1_url, hero2_url=hero2_url)
 
 
 @app.route("/connexion", methods=["GET", "POST"])
