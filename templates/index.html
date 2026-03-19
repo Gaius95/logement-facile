@@ -1,35 +1,108 @@
 {% extends "base.html" %}
 {% block title %}Accueil{% endblock %}
-{% block content %}
-<section class="hero" style="
-    background: linear-gradient(135deg, rgba(30,58,95,0.92) 0%, rgba(194,65,12,0.85) 100%),
-                url('https://images.unsplash.com/photo-1560185127-6ed1896f2f4f') center/cover;
+{% block extra_css %}
+<style>
+  .hero {
+    background: linear-gradient(135deg, rgba(30,58,95,0.92) 0%, rgba(194,65,12,0.72) 100%),
+                url('https://source.unsplash.com/1600x900/?conakry,guinea,city') center/cover;
     border-radius: var(--radius);
-    padding: 4rem 2rem;
+    padding: 4.5rem 2rem;
     text-align: center;
     color: white;
     margin-bottom: 3rem;
-">
-    <h1 style="font-family: 'Playfair Display', serif; font-size: 2.5rem; margin: 0 0 0.5rem;">Bienvenue sur Logement Facile</h1>
-    <p style="font-size: 1.2rem; opacity: 0.95; max-width: 560px; margin: 0 auto 2rem;">Trouvez ou publiez des logements à Conakry — location et vente en toute simplicité.</p>
+  }
+  .hero h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2rem, 4vw, 2.9rem);
+    margin: 0 0 0.6rem;
+  }
+  .hero p { font-size: 1.15rem; opacity: 0.95; max-width: 700px; margin: 0 auto 2rem; }
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+  }
+  .listing-card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .listing-card:hover { transform: translateY(-4px); box-shadow: 0 12px 28px rgba(0,0,0,0.12); }
+  .listing-card .thumb {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    display: block;
+  }
+  .listing-card .body { padding: 1.25rem; }
+  .listing-card .desc {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    margin: 0 0 0.75rem;
+    display: -webkit-box;
+    line-clamp: 2;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .spots-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2.3rem;
+  }
+  .spot {
+    position: relative;
+    border-radius: var(--radius);
+    overflow: hidden;
+    min-height: 160px;
+    box-shadow: var(--shadow);
+  }
+  .spot img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .spot .label {
+    position: absolute;
+    inset: auto 0 0 0;
+    padding: 0.8rem;
+    background: linear-gradient(180deg, transparent, rgba(0,0,0,0.6));
+    color: #fff;
+    font-weight: 700;
+  }
+</style>
+{% endblock %}
+{% block content %}
+{% set conakry_spots = [
+  {'name': 'Place Plaza', 'img': 'https://source.unsplash.com/900x700/?conakry,plaza'},
+  {'name': 'Kaloum', 'img': 'https://source.unsplash.com/900x700/?conakry,downtown'},
+  {'name': 'Corniche de Conakry', 'img': 'https://source.unsplash.com/900x700/?conakry,coast'},
+  {'name': 'Kipé', 'img': 'https://source.unsplash.com/900x700/?conakry,residential'}
+] %}
+<section class="hero">
+    <h1>Bienvenue sur Logement Facile</h1>
+    <p>Trouvez ou publiez des logements à Conakry — location et vente en toute simplicité, dans les plus belles zones de la ville.</p>
     <a href="/maisons" class="btn" style="background: white; color: var(--primary); margin-right: 0.5rem;">Explorer les logements</a>
     <a href="/publier" class="btn" style="background: transparent; border: 2px solid white;">Publier une annonce</a>
 </section>
 
+<h2 style="font-family: 'Playfair Display', serif; margin-bottom: 1rem;">Belles cités de Conakry</h2>
+<div class="spots-grid">
+  {% for s in conakry_spots %}
+    <article class="spot">
+      <img src="{{ s.img }}" alt="{{ s.name }}">
+      <div class="label">{{ s.name }}</div>
+    </article>
+  {% endfor %}
+</div>
+
 <h2 style="font-family: 'Playfair Display', serif; margin-bottom: 1.5rem;">Logements récents</h2>
-<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem;">
+<div class="cards-grid">
     {% for maison in maisons %}
-    <article style="
-        background: var(--card-bg);
-        border-radius: var(--radius);
-        box-shadow: var(--shadow);
-        overflow: hidden;
-        transition: transform 0.2s, box-shadow 0.2s;
-    " onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 12px 28px rgba(0,0,0,0.12)';" onmouseout="this.style.transform=''; this.style.boxShadow='var(--shadow)';">
-        <div style="height: 180px; background: url('https://images.unsplash.com/photo-1502672260266-1c1ef2d93688') center/cover;"></div>
-        <div style="padding: 1.25rem;">
+    <article class="listing-card">
+        <img class="thumb" src="https://source.unsplash.com/1000x700/?conakry,house,building" alt="Logement à {{ maison.commune }}">
+        <div class="body">
             <h3 style="margin: 0 0 0.5rem; font-size: 1.2rem;">{{ maison.commune }}</h3>
-            <p style="color: var(--text-muted); font-size: 0.95rem; margin: 0 0 0.75rem; display: -webkit-box; line-clamp: 2; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">{{ maison.description }}</p>
+            <p class="desc">{{ maison.description }}</p>
             <p style="margin: 0; font-weight: 700; color: var(--primary);">{{ maison.prix }} GNF <span style="font-weight: 400; color: var(--text-muted); font-size: 0.9rem;">/ mois</span></p>
             <a href="/maisons" style="display: inline-block; margin-top: 0.75rem; color: var(--primary); font-weight: 600; text-decoration: none;">Voir sur la carte →</a>
         </div>
