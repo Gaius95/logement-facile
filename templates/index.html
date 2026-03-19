@@ -4,7 +4,7 @@
 <style>
   .hero {
     background: linear-gradient(135deg, rgba(30,58,95,0.92) 0%, rgba(194,65,12,0.72) 100%),
-                url('https://source.unsplash.com/1600x900/?conakry,guinea,city') center/cover;
+                url('{{ url_for("conakry_media", filename="conakry.jpg") }}') center/cover;
     border-radius: var(--radius);
     padding: 4.5rem 2rem;
     text-align: center;
@@ -72,16 +72,17 @@
 </style>
 {% endblock %}
 {% block content %}
+{% set conakry_img = url_for("conakry_media", filename="conakry.jpg") %}
 {% set conakry_spots = [
-  {'name': 'Place Plaza', 'img': 'https://source.unsplash.com/900x700/?conakry,plaza'},
-  {'name': 'Kaloum', 'img': 'https://source.unsplash.com/900x700/?conakry,downtown'},
-  {'name': 'Corniche de Conakry', 'img': 'https://source.unsplash.com/900x700/?conakry,coast'},
-  {'name': 'Kipé', 'img': 'https://source.unsplash.com/900x700/?conakry,residential'}
+  {'name': 'Place Plaza', 'img': conakry_img},
+  {'name': 'Kaloum', 'img': conakry_img},
+  {'name': 'Corniche de Conakry', 'img': conakry_img},
+  {'name': 'Kipé', 'img': conakry_img}
 ] %}
 <section class="hero">
     <h1>Bienvenue sur Logement Facile</h1>
     <p>Trouvez ou publiez des logements à Conakry — location et vente en toute simplicité, dans les plus belles zones de la ville.</p>
-    <a href="/maisons" class="btn" style="background: white; color: var(--primary); margin-right: 0.5rem;">Explorer les logements</a>
+    <a href="/maisons" class="btn" style="background: white; color: var(--primary) !important; margin-right: 0.5rem;">Explorer les logements</a>
     <a href="/publier" class="btn" style="background: transparent; border: 2px solid white;">Publier une annonce</a>
 </section>
 
@@ -99,7 +100,7 @@
 <div class="cards-grid">
     {% for maison in maisons %}
     <article class="listing-card">
-        <img class="thumb" src="https://source.unsplash.com/1000x700/?conakry,house,building" alt="Logement à {{ maison.commune }}">
+        <img class="thumb" src="{{ conakry_img }}" alt="Logement à {{ maison.commune }}">
         <div class="body">
             <h3 style="margin: 0 0 0.5rem; font-size: 1.2rem;">{{ maison.commune }}</h3>
             <p class="desc">{{ maison.description }}</p>
