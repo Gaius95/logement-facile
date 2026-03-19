@@ -6,7 +6,7 @@
     .hero-map {
         height: 380px;
         background: linear-gradient(135deg, rgba(30,58,95,0.9) 0%, rgba(194,65,12,0.8) 100%),
-                    url('https://images.unsplash.com/photo-1560185127-6ed1896f2f4f') center/cover;
+                    url('{{ url_for("conakry_media", filename="conakry.jpg") }}') center/cover;
         border-radius: var(--radius);
         display: flex;
         align-items: center;
@@ -37,6 +37,12 @@
 </style>
 {% endblock %}
 {% block content %}
+{% set district_images = [
+  url_for("conakry_media", filename="conakry.jpg"),
+  url_for("conakry_media", filename="conakry.jpg"),
+  url_for("conakry_media", filename="conakry.jpg"),
+  url_for("conakry_media", filename="conakry.jpg")
+] %}
 <div class="hero-map">
     <h1>Logements disponibles à Conakry</h1>
 </div>
@@ -45,7 +51,7 @@
 <div class="cards-logements">
     {% for maison in maisons %}
     <article class="card-logement">
-        <img src="https://images.unsplash.com/photo-1502672260266-1c1ef2d93688" alt="Logement {{ maison.commune }}">
+        <img src="{{ district_images[loop.index0 % (district_images|length)] }}" alt="Logement {{ maison.commune }}">
         <div class="body">
             <h3>{{ maison.commune }}</h3>
             <p class="desc">{{ maison.description }}</p>
