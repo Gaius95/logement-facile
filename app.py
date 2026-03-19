@@ -98,23 +98,9 @@ def load_user(user_id: str):
 
 with app.app_context():
     db.create_all()
-
-    # Petite migration légère pour SQLite (ajout de colonnes si la DB existait déjà).
-    # En production, utilise plutôt une vraie migration (Alembic), mais ici on garde simple.
-    if db_url.startswith("sqlite"):
-        try:
-            cols = {r[1] for r in db.session.execute(db.text("PRAGMA table_info(payment)")).fetchall()}
-            if "cinetpay_transaction_id" not in cols:
-                db.session.execute(db.text("ALTER TABLE payment ADD COLUMN cinetpay_transaction_id VARCHAR(80)"))
-            if "cinetpay_payment_url" not in cols:
-                db.session.execute(db.text("ALTER TABLE payment ADD COLUMN cinetpay_payment_url VARCHAR(512)"))
-            if "lengopay_pay_id" not in cols:
-                db.session.execute(db.text("ALTER TABLE payment ADD COLUMN lengopay_pay_id VARCHAR(80)"))
-            if "lengopay_payment_url" not in cols:
-                db.session.execute(db.text("ALTER TABLE payment ADD COLUMN lengopay_payment_url VARCHAR(512)"))
-            db.session.commit()
-        except Exception:
-            db.session.rollback()
+    # Note: on évite les ALTER TABLE au démarrage (surtout avec SQLite sur
+    # environnements éphémères comme Render). `db.create_all()` suffit
+    # pour créer la structure à partir des modèles.
 
 
 def published_listings(limit: int = 24):
