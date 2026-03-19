@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}Ajouter un logement{% endblock %}
+{% block content %}
+<p>Redirection vers la page de publication…</p>
+<script>window.location.href = "{{ url_for('publier') }}";</script>
+<a href="{{ url_for('publier') }}">Cliquez ici si vous n'êtes pas redirigé.</a>
+{% endblock %}

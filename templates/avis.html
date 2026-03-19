@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Avis{% endblock %}
+{% block content %}
+<h1 style="font-family: 'Playfair Display', serif; margin-bottom: 0.5rem;">Avis des utilisateurs</h1>
+<p style="color: var(--text-muted); margin-bottom: 2rem;">Ce que disent les personnes qui ont trouvé un logement sur Logement Facile.</p>
+
+<div style="display: grid; gap: 1.5rem; max-width: 700px;">
+    <blockquote style="
+        background: var(--card-bg);
+        padding: 1.5rem;
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        border-left: 4px solid var(--primary);
+        margin: 0;
+    ">
+        <p style="margin: 0 0 1rem; font-style: italic;">« J'ai trouvé un super appartement à Kipé en quelques jours. Plateforme simple et efficace. »</p>
+        <footer style="color: var(--text-muted); font-size: 0.9rem;">— Aissatou, Conakry</footer>
+    </blockquote>
+    <blockquote style="
+        background: var(--card-bg);
+        padding: 1.5rem;
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        border-left: 4px solid var(--primary);
+        margin: 0;
+    ">
+        <p style="margin: 0 0 1rem; font-style: italic;">« La carte m'a beaucoup aidé pour voir les quartiers. Je recommande. »</p>
+        <footer style="color: var(--text-muted); font-size: 0.9rem;">— Mamadou, Lambanyi</footer>
+    </blockquote>
+</div>
+
+<p style="margin-top: 2rem; color: var(--text-muted);">Les avis vérifiés seront affichés ici une fois la fonctionnalité activée.</p>
+{% endblock %}

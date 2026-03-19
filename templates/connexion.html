@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Connexion{% endblock %}
+{% block extra_css %}
+<style>
+    .auth-box { max-width: 400px; margin: 2rem auto; }
+    .auth-box h1 { font-family: 'Playfair Display', serif; margin-bottom: 1.5rem; }
+    .auth-box label { display: block; font-weight: 600; margin-bottom: 0.35rem; }
+    .auth-box input {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        font-size: 1rem;
+    }
+    .auth-box button { width: 100%; padding: 0.85rem; margin-top: 0.5rem; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="auth-box">
+    <h1>Connexion</h1>
+    <form method="POST" action="{{ url_for('connexion') }}">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" placeholder="vous@exemple.com" required>
+        <label for="password">Mot de passe</label>
+        <input type="password" id="password" name="password" placeholder="••••••••" required>
+        <button type="submit" class="btn">Se connecter</button>
+    </form>
+    <p style="margin-top: 1.5rem; color: var(--text-muted); font-size: 0.95rem;">
+      Pas encore de compte ? <a href="{{ url_for('inscription') }}">Créer un compte</a>
+    </p>
+</div>
+{% endblock %}

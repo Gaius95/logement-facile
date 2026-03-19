@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Contact{% endblock %}
+{% block extra_css %}
+<style>
+    .contact-form { max-width: 500px; }
+    .contact-form label { display: block; font-weight: 600; margin-bottom: 0.35rem; }
+    .contact-form input, .contact-form textarea {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        font-family: inherit;
+        font-size: 1rem;
+    }
+    .contact-form textarea { min-height: 140px; resize: vertical; }
+</style>
+{% endblock %}
+{% block content %}
+<h1 style="font-family: 'Playfair Display', serif; margin-bottom: 0.5rem;">Contact</h1>
+<p style="color: var(--text-muted); margin-bottom: 2rem;">Une question ou une suggestion ? Envoyez-nous un message.</p>
+
+<form class="contact-form" method="POST" action="{{ url_for('contact') }}">
+    <label for="nom">Nom</label>
+    <input type="text" id="nom" name="nom" placeholder="Votre nom">
+    <label for="email">Email *</label>
+    <input type="email" id="email" name="email" placeholder="vous@exemple.com" required>
+    <label for="message">Message *</label>
+    <textarea id="message" name="message" placeholder="Votre message..." required></textarea>
+    <button type="submit" class="btn">Envoyer</button>
+</form>
+
+<p style="margin-top: 2rem; color: var(--text-muted); font-size: 0.95rem;">Nous répondons généralement sous 24 à 48 h.</p>
+{% endblock %}

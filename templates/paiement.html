@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Paiement{% endblock %}
+{% block content %}
+<h1 style="font-family: 'Playfair Display', serif; margin-bottom: 0.5rem;">Paiement</h1>
+<p style="color: var(--text-muted); margin-bottom: 1.5rem;">
+  Pour rendre l’annonce visible, il faut payer les frais de publication.
+</p>
+
+<div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 1.25rem; max-width: 720px;">
+  <h2 style="margin:0 0 0.5rem; font-size: 1.15rem;">Annonce: {{ listing.commune }}</h2>
+  <p style="margin:0 0 0.75rem; color: var(--text-muted);">{{ listing.description }}</p>
+  <p style="margin:0; font-weight: 900; color: var(--primary);">Frais: {{ fee_gnf }} GNF</p>
+
+  {% if provider == 'lengopay' %}
+    <form method="POST" style="margin-top: 1rem;">
+      <button class="btn" type="submit">Payer via Mobile Money (Guinée)</button>
+    </form>
+    <p style="margin-top: 0.75rem; color: var(--text-muted); font-size: 0.9rem;">
+      Paiement sécurisé via LengoPay (Mobile Money).
+    </p>
+  {% elif provider == 'cinetpay' %}
+    <form method="POST" style="margin-top: 1rem;">
+      <button class="btn" type="submit">Payer via Mobile Money (Guinée)</button>
+    </form>
+    <p style="margin-top: 0.75rem; color: var(--text-muted); font-size: 0.9rem;">
+      Paiement sécurisé via CinetPay (Orange Money GN / MTN Mobile Money GN).
+    </p>
+  {% elif stripe_enabled %}
+    <form method="POST" style="margin-top: 1rem;">
+      <button class="btn" type="submit">Payer maintenant</button>
+    </form>
+    <p style="margin-top: 0.75rem; color: var(--text-muted); font-size: 0.9rem;">
+      Paiement sécurisé via Stripe.
+    </p>
+  {% else %}
+    <div style="margin-top: 1rem; padding: 12px 14px; border-radius: 10px; border: 1px dashed var(--border); color: var(--text-muted);">
+      Stripe n’est pas encore configuré sur ce serveur.
+      <br>
+      En local, tu peux publier en mode démo depuis “Mon compte”.
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
+

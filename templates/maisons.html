@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Logements à Conakry{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+    .hero-map {
+        height: 380px;
+        background: linear-gradient(135deg, rgba(30,58,95,0.9) 0%, rgba(194,65,12,0.8) 100%),
+                    url('https://images.unsplash.com/photo-1560185127-6ed1896f2f4f') center/cover;
+        border-radius: var(--radius);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        margin-bottom: 2rem;
+    }
+    .hero-map h1 { font-family: 'Playfair Display', serif; font-size: 2rem; margin: 0; }
+    #map { height: 500px; border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 2rem; }
+    .cards-logements {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1.5rem;
+    }
+    .card-logement {
+        background: var(--card-bg);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        overflow: hidden;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .card-logement:hover { transform: translateY(-4px); box-shadow: 0 12px 28px rgba(0,0,0,0.12); }
+    .card-logement img { width: 100%; height: 180px; object-fit: cover; }
+    .card-logement .body { padding: 1.25rem; }
+    .card-logement h3 { margin: 0 0 0.5rem; font-size: 1.2rem; }
+    .card-logement .desc { color: var(--text-muted); font-size: 0.95rem; margin: 0 0 0.75rem; display: -webkit-box; line-clamp: 2; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .card-logement .prix { font-weight: 700; color: var(--primary); }
+</style>
+{% endblock %}
+{% block content %}
+<div class="hero-map">
+    <h1>Logements disponibles à Conakry</h1>
+</div>
+<div id="map"></div>
+<h2 style="font-family: 'Playfair Display', serif; margin-bottom: 1.5rem;">Tous les logements</h2>
+<div class="cards-logements">
+    {% for maison in maisons %}
+    <article class="card-logement">
+        <img src="https://images.unsplash.com/photo-1502672260266-1c1ef2d93688" alt="Logement {{ maison.commune }}">
+        <div class="body">
+            <h3>{{ maison.commune }}</h3>
+            <p class="desc">{{ maison.description }}</p>
+            <p class="prix">{{ maison.prix }} GNF <span style="font-weight:400;color:var(--text-muted);font-size:0.9rem;">/ mois</span></p>
+        </div>
+    </article>
+    {% endfor %}
+</div>
+{% if not maisons %}
+<p style="color: var(--text-muted);">Aucun logement. <a href="/publier">Publiez une annonce</a>.</p>
+{% endif %}
+{% endblock %}
+{% block extra_js %}
+<script type="application/json" id="maisons-data">{{ maisons_data | default([]) | tojson }}</script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+(function() {
+    var map = L.map('map').setView([9.6412, -13.5784], 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
+
+    var maisons = JSON.parse((document.getElementById('maisons-data') || {}).textContent || '[]');
+    maisons.forEach(function(m) {
+        var lat = typeof m.latitude === 'number' ? m.latitude : parseFloat(m.latitude) || 9.6412;
+        var lng = typeof m.longitude === 'number' ? m.longitude : parseFloat(m.longitude) || -13.5784;
+        L.marker([lat, lng]).addTo(map).bindPopup(
+            '<b>' + (m.commune || 'Logement') + '</b><br>' + (m.description || '') + '<br><strong>' + (m.prix || '') + ' GNF / mois</strong>'
+        );
+    });
+})();
+</script>
+{% endblock %}

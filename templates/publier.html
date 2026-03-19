@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Publier un logement{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+    .form-publier { max-width: 560px; }
+    .form-publier label { display: block; font-weight: 600; margin-bottom: 0.35rem; }
+    .form-publier input, .form-publier textarea {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        font-family: inherit;
+        font-size: 1rem;
+        margin-bottom: 1.25rem;
+    }
+    .form-publier textarea { min-height: 120px; resize: vertical; }
+    .form-publier button[type="submit"] { margin-top: 0.5rem; }
+    #map-picker { height: 300px; border-radius: var(--radius); margin-bottom: 1rem; }
+    .hint { font-size: 0.85rem; color: var(--text-muted); margin-top: -0.75rem; margin-bottom: 1rem; }
+</style>
+{% endblock %}
+{% block content %}
+<h1 style="font-family: 'Playfair Display', serif; margin-bottom: 0.5rem;">Publier un logement</h1>
+<p style="color: var(--text-muted); margin-bottom: 2rem;">Remplissez le formulaire pour ajouter votre annonce sur la carte.</p>
+
+<form class="form-publier" method="POST" action="{{ url_for('publier') }}">
+    <label for="commune">Commune / Quartier *</label>
+    <input type="text" id="commune" name="commune" placeholder="Ex. Kipé, Lambanyi, Sonfonia" required>
+
+    <label for="prix">Prix (GNF / mois) *</label>
+    <input type="text" id="prix" name="prix" placeholder="Ex. 1500000" required>
+
+    <label for="description">Description *</label>
+    <textarea id="description" name="description" placeholder="Décrivez le logement, les commodités, etc." required></textarea>
+
+    <label>Position sur la carte</label>
+    <p class="hint">Cliquez sur la carte pour placer le marqueur (ou laissez la position par défaut).</p>
+    <div id="map-picker"></div>
+    <label for="latitude">Latitude</label>
+    <input type="text" id="latitude" name="latitude" value="9.6412" readonly>
+    <label for="longitude">Longitude</label>
+    <input type="text" id="longitude" name="longitude" value="-13.5784" readonly>
+
+    <button type="submit" class="btn">Publier l'annonce</button>
+</form>
+{% endblock %}
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+(function() {
+    var latInput = document.getElementById('latitude');
+    var lngInput = document.getElementById('longitude');
+    var lat = parseFloat(latInput.value) || 9.6412;
+    var lng = parseFloat(lngInput.value) || -13.5784;
+    var map = L.map('map-picker').setView([lat, lng], 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
+    var marker = L.marker([lat, lng]).addTo(map);
+    map.on('click', function(e) {
+        marker.setLatLng(e.latlng);
+        latInput.value = e.latlng.lat.toFixed(4);
+        lngInput.value = e.latlng.lng.toFixed(4);
+    });
+})();
+</script>
+{% endblock %}

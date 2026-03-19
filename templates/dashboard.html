@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Mon compte{% endblock %}
+{% block content %}
+<h1 style="font-family: 'Playfair Display', serif; margin-bottom: 0.5rem;">Mon compte</h1>
+<p style="color: var(--text-muted); margin-bottom: 1.5rem;">
+  Connecté en tant que <strong>{{ current_user.email }}</strong>
+</p>
+
+<div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom: 1.5rem;">
+  <a class="btn" href="{{ url_for('publier') }}">Publier un logement</a>
+</div>
+
+<h2 style="font-family: 'Playfair Display', serif; margin-bottom: 1rem;">Mes annonces</h2>
+<p style="color: var(--text-muted); margin-top: -0.5rem; margin-bottom: 1.25rem;">
+  Paiement activé: <strong>{{ provider }}</strong>
+  {% if provider == 'none' %}
+    (mode démo)
+  {% endif %}
+</p>
+
+{% if not listings %}
+  <p style="color: var(--text-muted);">Aucune annonce. <a href="{{ url_for('publier') }}">Créer la première</a>.</p>
+{% endif %}
+
+<div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem;">
+  {% for l in listings %}
+    <article style="background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 1rem;">
+      <div style="display:flex; justify-content: space-between; gap:10px; align-items: baseline;">
+        <h3 style="margin:0; font-size: 1.1rem;">{{ l.commune }}</h3>
+        <span style="font-size: 0.85rem; font-weight: 800; color: {% if l.status == 'published' %}var(--primary){% else %}var(--text-muted){% endif %};">
+          {{ l.status }}
+        </span>
+      </div>
+      <p style="margin:0.5rem 0; color: var(--text-muted);">{{ l.description }}</p>
+      <p style="margin:0; font-weight: 800; color: var(--primary);">{{ l.prix }} GNF / mois</p>
+
+      {% if l.status != 'published' %}
+        <div style="margin-top: 0.9rem; display:flex; gap:10px; flex-wrap:wrap;">
+          <a class="btn" href="{{ url_for('checkout', listing_id=l.id) }}">Payer & publier</a>
+          {% if provider == 'none' %}
+            <form method="POST" action="{{ url_for('dev_publish_without_pay', listing_id=l.id) }}">
+              <button class="btn" type="submit" style="background: transparent; border: 2px solid var(--primary); color: var(--primary) !important;">
+                Publier (démo)
+              </button>
+            </form>
+          {% endif %}
+        </div>
+        <p style="margin-top: 0.75rem; color: var(--text-muted); font-size: 0.9rem;">
+          Frais de publication: <strong>{{ fee_gnf }} GNF</strong>
+        </p>
+      {% else %}
+        <p style="margin-top: 0.75rem; color: var(--text-muted); font-size: 0.9rem;">
+          Visible sur <a href="{{ url_for('maisons_page') }}">Explorer</a>.
+        </p>
+      {% endif %}
+    </article>
+  {% endfor %}
+</div>
+{% endblock %}
+

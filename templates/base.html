@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Logement Facile{% endblock %} — Conakry</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #c2410c;
+            --primary-dark: #9a3412;
+            --secondary: #1e3a5f;
+            --bg: #faf8f5;
+            --card-bg: #ffffff;
+            --text: #1a1a1a;
+            --text-muted: #6b7280;
+            --border: #e5e7eb;
+            --shadow: 0 4px 20px rgba(0,0,0,0.08);
+            --radius: 12px;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+        .nav {
+            background: var(--card-bg);
+            box-shadow: var(--shadow);
+            padding: 0.75rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .nav a.brand {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-decoration: none;
+        }
+        .nav-links {
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+        }
+        .nav-links a {
+            color: var(--text);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        .nav-links a:hover { color: var(--primary); }
+        .btn {
+            display: inline-block;
+            padding: 0.6rem 1.25rem;
+            background: var(--primary);
+            color: white !important;
+            border-radius: 8px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background 0.2s;
+        }
+        .btn:hover { background: var(--primary-dark); }
+        main { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+        footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-top: 3rem;
+            border-top: 1px solid var(--border);
+        }
+        footer a { color: var(--primary); text-decoration: none; }
+        .flash {
+            max-width: 1200px;
+            margin: 16px auto -10px;
+            padding: 0 2rem;
+        }
+        .flash .msg {
+            border: 1px solid var(--border);
+            background: var(--card-bg);
+            border-radius: 10px;
+            padding: 12px 14px;
+            box-shadow: var(--shadow);
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        .flash .error { border-color: rgba(248,113,113,0.35); }
+        .flash .info { border-color: rgba(59,130,246,0.35); }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <nav class="nav">
+        <a href="/" class="brand">Logement Facile</a>
+        <div class="nav-links">
+            <a href="/">Accueil</a>
+            <a href="/maisons">Explorer</a>
+            <a href="/publier" class="btn">Publier un logement</a>
+            {% if current_user.is_authenticated %}
+                <a href="/dashboard">Mon compte</a>
+                <a href="/deconnexion">Déconnexion</a>
+            {% else %}
+                <a href="/connexion">Connexion</a>
+            {% endif %}
+            <a href="/avis">Avis</a>
+            <a href="/contact">Contact</a>
+        </div>
+    </nav>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash">
+          {% for category, message in messages %}
+            <div class="msg {{ category }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+    <footer>
+        © 2025 Logement Facile — Location & vente à Conakry · <a href="/contact">Contact</a>
+    </footer>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

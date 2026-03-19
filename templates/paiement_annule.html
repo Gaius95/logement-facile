@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Paiement annulé{% endblock %}
+{% block content %}
+<h1 style="font-family: 'Playfair Display', serif; margin-bottom: 0.5rem;">Paiement annulé</h1>
+<p style="color: var(--text-muted); margin-bottom: 1.5rem;">
+  Pas de souci. Ton annonce reste en attente tant que le paiement n’est pas effectué.
+</p>
+
+<div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 1.25rem; max-width: 720px;">
+  <h2 style="margin:0 0 0.5rem; font-size: 1.15rem;">Annonce: {{ listing.commune }}</h2>
+  <p style="margin:0 0 0.75rem; color: var(--text-muted);">{{ listing.description }}</p>
+  <p style="margin:0; font-weight: 900; color: var(--primary);">Frais: {{ fee_gnf }} GNF</p>
+  <div style="margin-top: 1rem;">
+    <a class="btn" href="{{ url_for('checkout', listing_id=listing.id) }}">Réessayer</a>
+    <a class="btn" href="{{ url_for('dashboard') }}" style="background: transparent; border: 2px solid var(--primary); color: var(--primary) !important; margin-left: 8px;">
+      Mon compte
+    </a>
+  </div>
+</div>
+{% endblock %}
+
