@@ -3,20 +3,52 @@
 {% block extra_css %}
 <style>
   .hero {
-    background: linear-gradient(135deg, rgba(30,58,95,0.92) 0%, rgba(194,65,12,0.72) 100%),
-                url('{{ url_for("conakry_media", filename="conakry.jpg") }}') center/cover;
+    position: relative;
     border-radius: var(--radius);
     padding: 4.5rem 2rem;
     text-align: center;
     color: white;
     margin-bottom: 3rem;
+    overflow: hidden;
   }
+  .hero::before{
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(30,58,95,0.92) 0%, rgba(194,65,12,0.72) 100%);
+    z-index: 1;
+    pointer-events: none;
+  }
+  .hero-bg{
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+  }
+  .hero-bg img{
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    transition: opacity 900ms ease-in-out;
+  }
+  .hero-bg img.active{ opacity: 1; }
   .hero h1 {
     font-family: 'Playfair Display', serif;
     font-size: clamp(2rem, 4vw, 2.9rem);
     margin: 0 0 0.6rem;
+    position: relative;
+    z-index: 2;
   }
-  .hero p { font-size: 1.15rem; opacity: 0.95; max-width: 700px; margin: 0 auto 2rem; }
+  .hero p {
+    font-size: 1.15rem;
+    opacity: 0.95;
+    max-width: 700px;
+    margin: 0 auto 2rem;
+    position: relative;
+    z-index: 2;
+  }
   .cards-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -80,11 +112,39 @@
   {'name': 'Kipé', 'img': conakry_img}
 ] %}
 <section class="hero">
+    <div class="hero-bg" aria-hidden="true">
+      <img
+        class="active"
+        src="{{ hero1_url }}"
+        alt=""
+      />
+      <img
+        src="{{ hero2_url }}"
+        alt=""
+      />
+    </div>
+
     <h1>Bienvenue sur Logement Facile</h1>
     <p>Trouvez ou publiez des logements à Conakry — location et vente en toute simplicité, dans les plus belles zones de la ville.</p>
     <a href="/maisons" class="btn" style="background: white; color: var(--primary) !important; margin-right: 0.5rem;">Explorer les logements</a>
     <a href="/publier" class="btn" style="background: transparent; border: 2px solid white;">Publier une annonce</a>
 </section>
+
+<script>
+  (function() {
+    const hero = document.querySelector('.hero');
+    if (!hero) return;
+    const images = hero.querySelectorAll('.hero-bg img');
+    if (images.length < 2) return;
+
+    let idx = 0;
+    setInterval(() => {
+      images[idx].classList.remove('active');
+      idx = (idx + 1) % images.length;
+      images[idx].classList.add('active');
+    }, 6500);
+  })();
+</script>
 
 <h2 style="font-family: 'Playfair Display', serif; margin-bottom: 1rem;">Belles cités de Conakry</h2>
 <div class="spots-grid">
