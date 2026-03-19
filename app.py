@@ -1,4 +1,5 @@
 import os
+import re
 import secrets
 from datetime import datetime, timezone
 
@@ -8,20 +9,65 @@ from dotenv import load_dotenv
 from flask import Flask, abort, flash, jsonify, redirect, render_template, request, send_file, url_for
 from flask_login import LoginManager, UserMixin, current_user, login_required, login_user, logout_user
 from flask_sqlalchemy import SQLAlchemy
+from flask_wtf.csrf import CSRFError, CSRFProtect
+from sqlalchemy import text
 from werkzeug.security import check_password_hash, generate_password_hash
 
 load_dotenv()
 
+
+def is_production() -> bool:
+    return (
+        os.environ.get("RENDER", "").lower() == "true"
+        or os.environ.get("FLASK_ENV", "").lower() == "production"
+        or os.environ.get("ENVIRONMENT", "").lower() == "production"
+    )
+
+
 app = Flask(__name__)
-app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "change-me-in-production")
+
+_secret = (os.environ.get("SECRET_KEY") or "").strip()
+if is_production():
+    if not _secret or _secret == "change-me-in-production":
+        raise RuntimeError(
+            "SECRET_KEY doit être défini en production (variable d’environnement Render). "
+            "Génère une valeur longue et aléatoire (ex. openssl rand -hex 32)."
+        )
+    app.config["SECRET_KEY"] = _secret
+else:
+    app.config["SECRET_KEY"] = _secret or "change-me-in-production"
+
+# Cookies de session (HTTPS sur Render)
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+app.config["SESSION_COOKIE_SECURE"] = is_production()
+
+# CSRF sur tous les POST (webhooks exclus ci-dessous)
+app.config["WTF_CSRF_TIME_LIMIT"] = None
+app.config["WTF_CSRF_SSL_STRICT"] = is_production()
+
+csrf = CSRFProtect(app)
 
 # Serve local Guinea imagery from a folder with spaces: "static images/"
 CONAKRY_MEDIA_DIR = os.path.join(app.root_path, "static images")
 
+# Noms de fichiers autorisés pour /conakry-media/ (évite lecture arbitraire)
+_MEDIA_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,180}$")
+
+
+def _safe_media_basename(filename: str) -> str | None:
+    name = os.path.basename(filename or "")
+    if not name or not _MEDIA_NAME_RE.match(name):
+        return None
+    return name
+
 
 @app.route("/conakry-media/<path:filename>")
 def conakry_media(filename: str):
-    file_path = os.path.join(CONAKRY_MEDIA_DIR, filename)
+    safe_name = _safe_media_basename(filename)
+    if not safe_name:
+        abort(404)
+    file_path = os.path.join(CONAKRY_MEDIA_DIR, safe_name)
     if not os.path.isfile(file_path):
         abort(404)
     return send_file(file_path)
@@ -45,6 +91,8 @@ CURSOR_ASSETS_DIR = os.path.abspath(
 
 @app.route("/cursor-assets/<path:filename>")
 def cursor_asset(filename: str):
+    if is_production():
+        abort(404)
     # Prevent path traversal: only allow files inside CURSOR_ASSETS_DIR.
     safe_name = os.path.basename(filename)
     file_path = os.path.join(CURSOR_ASSETS_DIR, safe_name)
@@ -63,12 +111,68 @@ if db_url.startswith("postgres://"):
     db_url = db_url.replace("postgres://", "postgresql://", 1)
 app.config["SQLALCHEMY_DATABASE_URI"] = db_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+if db_url.startswith("postgresql"):
+    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+        "pool_pre_ping": True,
+        "pool_recycle": int(os.environ.get("DB_POOL_RECYCLE", "280")),
+        "pool_size": int(os.environ.get("DB_POOL_SIZE", "5")),
+        "max_overflow": int(os.environ.get("DB_MAX_OVERFLOW", "10")),
+    }
 
 db = SQLAlchemy(app)
 
 login_manager = LoginManager()
 login_manager.login_view = "connexion"
 login_manager.init_app(app)
+
+
+@app.after_request
+def _security_headers(response):
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
+    response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    response.headers.setdefault(
+        "Permissions-Policy",
+        "geolocation=(self), microphone=(), camera=()",
+    )
+    if is_production():
+        response.headers.setdefault(
+            "Strict-Transport-Security",
+            "max-age=31536000; includeSubDomains",
+        )
+    return response
+
+
+@app.route("/health")
+def health():
+    """Sonde liveness (load balancer / Render) — ne touche pas à la DB."""
+    return jsonify(status="ok", service="logement-facile"), 200
+
+
+@app.route("/health/ready")
+def health_ready():
+    """Sonde readiness : vérifie la connexion DB."""
+    try:
+        db.session.execute(text("SELECT 1"))
+    except Exception:
+        return jsonify(status="not_ready"), 503
+    return jsonify(status="ready"), 200
+
+
+@app.errorhandler(404)
+def _not_found(_e):
+    return render_template("errors/404.html"), 404
+
+
+@app.errorhandler(500)
+def _server_error(_e):
+    return render_template("errors/500.html"), 500
+
+
+@app.errorhandler(CSRFError)
+def _csrf_error(_e):
+    flash("Session expirée ou formulaire invalide. Recharge la page puis réessaie.", "error")
+    return redirect(request.referrer or url_for("accueil")), 303
 
 
 def utcnow() -> datetime:
@@ -351,8 +455,8 @@ def inscription():
         if not email or "@" not in email:
             flash("Email invalide.", "error")
             return render_template("inscription.html"), 400
-        if len(password) < 6:
-            flash("Mot de passe trop court (min 6).", "error")
+        if len(password) < 8:
+            flash("Mot de passe trop court (min 8 caractères).", "error")
             return render_template("inscription.html"), 400
         if password != password2:
             flash("Les mots de passe ne correspondent pas.", "error")
@@ -447,21 +551,30 @@ def publier():
         except ValueError:
             longitude = -13.5784
 
-        if commune and prix and description:
-            maison = Maison(
-                owner_id=current_user.id,
-                commune=commune,
-                prix=prix,
-                description=description,
-                latitude=latitude,
-                longitude=longitude,
-                status="pending_payment",
-            )
-            db.session.add(maison)
-            db.session.commit()
+        if not (commune and prix and description):
+            flash("Merci de remplir tous les champs obligatoires.", "error")
+            return render_template("publier.html"), 400
+        if len(commune) > 120 or len(prix) > 80 or len(description) > 8000:
+            flash("Texte trop long (commune ≤ 120, prix ≤ 80, description ≤ 8000 caractères).", "error")
+            return render_template("publier.html"), 400
+        if not (-90 <= latitude <= 90) or not (-180 <= longitude <= 180):
+            flash("Coordonnées GPS invalides.", "error")
+            return render_template("publier.html"), 400
 
-            flash("Annonce créée. Paiement requis pour la rendre visible.", "info")
-            return redirect(url_for("checkout", listing_id=maison.id))
+        maison = Maison(
+            owner_id=current_user.id,
+            commune=commune,
+            prix=prix,
+            description=description,
+            latitude=latitude,
+            longitude=longitude,
+            status="pending_payment",
+        )
+        db.session.add(maison)
+        db.session.commit()
+
+        flash("Annonce créée. Paiement requis pour la rendre visible.", "info")
+        return redirect(url_for("checkout", listing_id=maison.id))
 
     return render_template("publier.html")
 
@@ -671,6 +784,7 @@ def lengopay_return(listing_id: int):
 
 
 @app.route("/webhooks/lengopay", methods=["POST"])
+@csrf.exempt
 def lengopay_webhook():
     payload = request.get_json(silent=True) or {}
     if not payload:
@@ -710,6 +824,7 @@ def lengopay_webhook():
 
 
 @app.route("/webhooks/cinetpay", methods=["GET", "POST"])
+@csrf.exempt
 def cinetpay_notify():
     # CinetPay ping en GET + notifie en POST (form-urlencoded)
     if request.method == "GET":
@@ -747,6 +862,7 @@ def cinetpay_notify():
 
 
 @app.route("/webhooks/stripe", methods=["POST"])
+@csrf.exempt
 def stripe_webhook():
     if not STRIPE_WEBHOOK_SECRET:
         return jsonify({"error": "Webhook secret not configured"}), 400
@@ -777,7 +893,7 @@ def stripe_webhook():
 @app.route("/dev/publier-sans-payer/<int:listing_id>", methods=["POST"])
 @login_required
 def dev_publish_without_pay(listing_id: int):
-    if os.environ.get("FLASK_ENV") == "production":
+    if is_production():
         abort(404)
     listing = Maison.query.filter_by(id=listing_id, owner_id=current_user.id).first_or_404()
     listing.status = "published"
