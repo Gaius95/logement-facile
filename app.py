@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 import requests
 import stripe
 from dotenv import load_dotenv
-from flask import Flask, abort, flash, jsonify, redirect, render_template, request, url_for
+from flask import Flask, abort, flash, jsonify, redirect, render_template, request, send_file, url_for
 from flask_login import LoginManager, UserMixin, current_user, login_required, login_user, logout_user
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -14,6 +14,17 @@ load_dotenv()
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "change-me-in-production")
+
+# Serve local Guinea imagery from a folder with spaces: "static images/"
+CONAKRY_MEDIA_DIR = os.path.join(app.root_path, "static images")
+
+
+@app.route("/conakry-media/<path:filename>")
+def conakry_media(filename: str):
+    file_path = os.path.join(CONAKRY_MEDIA_DIR, filename)
+    if not os.path.isfile(file_path):
+        abort(404)
+    return send_file(file_path)
 
 # DB: SQLite en local, Postgres via DATABASE_URL en prod (Render)
 db_url = os.environ.get("DATABASE_URL", "sqlite:///logement_facile.db")
