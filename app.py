@@ -2,7 +2,7 @@ import os
 import re
 import secrets
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import requests
 import stripe
@@ -217,6 +217,12 @@ class User(db.Model, UserMixin):
     kyc_doc_front = db.Column(db.String(255), nullable=True)  # chemin relatif uploads/kyc/<user_id>/...
     kyc_doc_back = db.Column(db.String(255), nullable=True)
     kyc_selfie = db.Column(db.String(255), nullable=True)  # photo du visage (comparaison manuelle ou API tierce)
+    # Vérification téléphone (OTP SMS)
+    phone_number = db.Column(db.String(32), nullable=True, index=True)
+    phone_verified_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    phone_verification_code_hash = db.Column(db.String(255), nullable=True)
+    phone_verification_expires_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    phone_verification_attempts = db.Column(db.Integer, nullable=False, default=0)
 
     listings = db.relationship("Maison", back_populates="owner", lazy="dynamic")
 
@@ -314,16 +320,81 @@ def _migrate_user_kyc_columns() -> None:
         add_col("kyc_doc_front", "VARCHAR(255)", "VARCHAR(255)")
         add_col("kyc_doc_back", "VARCHAR(255)", "VARCHAR(255)")
         add_col("kyc_selfie", "VARCHAR(255)", "VARCHAR(255)")
+        add_col("phone_number", "VARCHAR(32)", "VARCHAR(32)")
+        add_col("phone_verified_at", "DATETIME", "TIMESTAMP WITH TIME ZONE")
+        add_col("phone_verification_code_hash", "VARCHAR(255)", "VARCHAR(255)")
+        add_col("phone_verification_expires_at", "DATETIME", "TIMESTAMP WITH TIME ZONE")
+        add_col("phone_verification_attempts", "INTEGER DEFAULT 0", "INTEGER DEFAULT 0")
     except Exception:
         # On évite de faire planter l'app : migration best-effort.
         pass
 
 
 def user_kyc_allows_publish(user: "User") -> bool:
-    """Comptes legacy (kyc_status NULL) : inchangé. Nouveaux comptes : identité approuvée requise."""
+    """
+    Contrôle publication:
+    - Si un téléphone est défini, il doit être vérifié.
+    - Comptes legacy (kyc_status NULL) : inchangé côté KYC.
+    - Nouveaux comptes : identité approuvée requise.
+    """
+    if user.phone_number and not user.phone_verified_at:
+        return False
     if user.kyc_status is None:
         return True
     return user.kyc_status == "approved"
+
+
+def normalize_phone(raw: str) -> str | None:
+    val = (raw or "").strip().replace(" ", "")
+    val = val.replace("-", "").replace(".", "")
+    if val.startswith("00"):
+        val = "+" + val[2:]
+    if not val.startswith("+"):
+        return None
+    if not val[1:].isdigit():
+        return None
+    if len(val) < 9 or len(val) > 17:
+        return None
+    return val
+
+
+def send_sms_message(phone_number: str, text_msg: str) -> bool:
+    """
+    Envoi SMS via webhook HTTP générique (à brancher sur un provider).
+    Si non configuré, retourne False (mode test géré côté route).
+    """
+    sms_url = (os.environ.get("SMS_DISPATCH_URL") or "").strip()
+    sms_token = (os.environ.get("SMS_DISPATCH_TOKEN") or "").strip()
+    if not sms_url:
+        return False
+    headers = {"Content-Type": "application/json", "User-Agent": "LogementFacile/1.0"}
+    if sms_token:
+        headers["Authorization"] = f"Bearer {sms_token}"
+    try:
+        r = requests.post(
+            sms_url,
+            json={"to": phone_number, "message": text_msg},
+            headers=headers,
+            timeout=20,
+        )
+        return 200 <= r.status_code < 300
+    except Exception:
+        return False
+
+
+def start_phone_verification(user: User) -> tuple[bool, str]:
+    code = f"{secrets.randbelow(1000000):06d}"
+    ttl_minutes = int(os.environ.get("SMS_CODE_TTL_MINUTES", "10"))
+    user.phone_verification_code_hash = generate_password_hash(code)
+    user.phone_verification_expires_at = utcnow() + timedelta(minutes=max(2, ttl_minutes))
+    user.phone_verification_attempts = 0
+    db.session.commit()
+
+    sms_ok = send_sms_message(
+        user.phone_number or "",
+        f"Logement Facile - votre code de verification est: {code}. Expire dans {ttl_minutes} min.",
+    )
+    return sms_ok, code
 
 
 def is_kyc_admin(user: User) -> bool:
@@ -362,6 +433,11 @@ def inject_publish_nav():
         return {
             "nav_publish_url": url_for("publier"),
             "nav_publish_label": "Publier un logement",
+        }
+    if current_user.phone_number and not current_user.phone_verified_at:
+        return {
+            "nav_publish_url": url_for("verifier_telephone"),
+            "nav_publish_label": "Verifier mon telephone",
         }
     return {
         "nav_publish_url": url_for("verifier_identite"),
@@ -567,6 +643,9 @@ def connexion():
             flash("Email ou mot de passe invalide.", "error")
             return render_template("connexion.html"), 401
         login_user(user)
+        if user.phone_number and not user.phone_verified_at:
+            flash("Vérifiez votre numéro de téléphone pour continuer.", "info")
+            return redirect(url_for("verifier_telephone"))
         return redirect(safe_next_url() or url_for("dashboard"))
     return render_template("connexion.html")
 
@@ -575,11 +654,16 @@ def connexion():
 def inscription():
     if request.method == "POST":
         email = request.form.get("email", "").strip().lower()
+        phone_raw = request.form.get("phone_number", "").strip()
         password = request.form.get("password", "")
         password2 = request.form.get("password2", "")
+        phone = normalize_phone(phone_raw)
 
         if not email or "@" not in email:
             flash("Email invalide.", "error")
+            return render_template("inscription.html"), 400
+        if not phone:
+            flash("Numéro de téléphone invalide (format international, ex: +224...).", "error")
             return render_template("inscription.html"), 400
         if len(password) < 8:
             flash("Mot de passe trop court (min 8 caractères).", "error")
@@ -590,19 +674,97 @@ def inscription():
         if User.query.filter_by(email=email).first():
             flash("Un compte existe déjà avec cet email.", "error")
             return render_template("inscription.html"), 400
+        if User.query.filter_by(phone_number=phone).first():
+            flash("Ce numéro de téléphone est déjà utilisé.", "error")
+            return render_template("inscription.html"), 400
 
-        u = User(email=email, kyc_status="documents_required")
+        u = User(email=email, phone_number=phone, kyc_status="documents_required")
         u.set_password(password)
         db.session.add(u)
         db.session.commit()
         login_user(u)
-        flash(
-            "Complétez la vérification d’identité (pièce + photo du visage) pour publier des annonces.",
-            "info",
-        )
-        return redirect(safe_next_url() or url_for("verifier_identite"))
+        sms_ok, debug_code = start_phone_verification(u)
+        if sms_ok:
+            flash("Inscription réussie. Un code SMS a été envoyé à votre numéro.", "info")
+        else:
+            if is_production():
+                flash("Inscription réussie. Envoi SMS indisponible, réessayez dans un instant.", "error")
+            else:
+                flash(
+                    f"Inscription réussie. Mode test: votre code SMS est {debug_code} (à configurer en prod).",
+                    "info",
+                )
+        return redirect(safe_next_url() or url_for("verifier_telephone"))
 
     return render_template("inscription.html")
+
+
+@app.route("/compte/verifier-telephone", methods=["GET", "POST"])
+@login_required
+def verifier_telephone():
+    user = db.session.get(User, current_user.id)
+    if not user:
+        abort(404)
+    if not user.phone_number:
+        flash("Ajoutez un numéro de téléphone dans votre compte.", "error")
+        return redirect(url_for("dashboard"))
+    if user.phone_verified_at:
+        flash("Téléphone déjà vérifié.", "info")
+        return redirect(url_for("verifier_identite"))
+
+    if request.method == "POST":
+        code = (request.form.get("code") or "").strip()
+        if not (user.phone_verification_code_hash and user.phone_verification_expires_at):
+            flash("Aucun code actif. Cliquez sur 'Renvoyer le code'.", "error")
+            return render_template("verifier_telephone.html", user=user), 400
+        if utcnow() > user.phone_verification_expires_at:
+            flash("Code expiré. Demandez un nouveau code.", "error")
+            return render_template("verifier_telephone.html", user=user), 400
+        if user.phone_verification_attempts >= 5:
+            flash("Trop de tentatives. Demandez un nouveau code.", "error")
+            return render_template("verifier_telephone.html", user=user), 429
+        if not code.isdigit() or len(code) != 6:
+            flash("Code invalide (6 chiffres).", "error")
+            return render_template("verifier_telephone.html", user=user), 400
+        if not check_password_hash(user.phone_verification_code_hash, code):
+            user.phone_verification_attempts = int(user.phone_verification_attempts or 0) + 1
+            db.session.commit()
+            flash("Code incorrect.", "error")
+            return render_template("verifier_telephone.html", user=user), 400
+
+        user.phone_verified_at = utcnow()
+        user.phone_verification_code_hash = None
+        user.phone_verification_expires_at = None
+        user.phone_verification_attempts = 0
+        db.session.commit()
+        flash("Numéro de téléphone vérifié avec succès.", "info")
+        return redirect(url_for("verifier_identite"))
+
+    return render_template("verifier_telephone.html", user=user)
+
+
+@app.route("/compte/verifier-telephone/renvoyer", methods=["POST"])
+@login_required
+def renvoyer_code_telephone():
+    user = db.session.get(User, current_user.id)
+    if not user:
+        abort(404)
+    if not user.phone_number:
+        flash("Numéro de téléphone manquant.", "error")
+        return redirect(url_for("dashboard"))
+    if user.phone_verified_at:
+        flash("Téléphone déjà vérifié.", "info")
+        return redirect(url_for("verifier_identite"))
+
+    sms_ok, debug_code = start_phone_verification(user)
+    if sms_ok:
+        flash("Nouveau code SMS envoyé.", "info")
+    else:
+        if is_production():
+            flash("Envoi SMS indisponible. Vérifiez la configuration SMS.", "error")
+        else:
+            flash(f"Mode test: nouveau code SMS = {debug_code}", "info")
+    return redirect(url_for("verifier_telephone"))
 
 
 @app.route("/deconnexion")
@@ -630,6 +792,8 @@ def dashboard():
         kyc_status=current_user.kyc_status,
         kyc_allows_publish=user_kyc_allows_publish(current_user),
         is_kyc_admin_user=is_kyc_admin(current_user),
+        phone_verified=bool(current_user.phone_verified_at),
+        phone_required=bool(current_user.phone_number),
     )
 
 
