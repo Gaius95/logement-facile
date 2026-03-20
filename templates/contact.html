@@ -21,6 +21,7 @@
 <p style="color: var(--text-muted); margin-bottom: 2rem;">Une question ou une suggestion ? Envoyez-nous un message.</p>
 
 <form class="contact-form" method="POST" action="{{ url_for('contact') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <label for="nom">Nom</label>
     <input type="text" id="nom" name="nom" placeholder="Votre nom">
     <label for="email">Email *</label>
