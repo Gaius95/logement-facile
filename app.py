@@ -175,12 +175,18 @@ def health_ready():
 
 @app.errorhandler(404)
 def _not_found(_e):
-    return render_template("errors/404.html"), 404
+    try:
+        return render_template("errors/404.html"), 404
+    except Exception:
+        return "404 Not Found", 404
 
 
 @app.errorhandler(500)
 def _server_error(_e):
-    return render_template("errors/500.html"), 500
+    try:
+        return render_template("errors/500.html"), 500
+    except Exception:
+        return "500 Internal Server Error", 500
 
 
 @app.errorhandler(CSRFError)
@@ -630,7 +636,22 @@ def dashboard():
 @app.route("/compte/verifier-identite", methods=["GET", "POST"])
 @login_required
 def verifier_identite():
-    user = db.session.get(User, current_user.id)
+    # Render peut démarrer avec une DB existante (sans nouvelles colonnes KYC).
+    # On tente donc une migration best-effort avant de charger l'utilisateur.
+    try:
+        _migrate_user_kyc_columns()
+    except Exception:
+        pass
+
+    try:
+        user = db.session.get(User, current_user.id)
+    except Exception:
+        try:
+            _migrate_user_kyc_columns()
+            user = db.session.get(User, current_user.id)
+        except Exception:
+            user = None
+
     if not user:
         abort(404)
 
