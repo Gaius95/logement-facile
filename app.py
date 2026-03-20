@@ -335,6 +335,25 @@ def _save_kyc_image(file_storage, user_id: int, prefix: str) -> str | None:
     return f"{user_id}/{out_name}"
 
 
+@app.context_processor
+def inject_publish_nav():
+    """Menu : si identité non validée, le bouton mène à la page KYC au lieu de /publier."""
+    if not current_user.is_authenticated:
+        return {
+            "nav_publish_url": url_for("publier"),
+            "nav_publish_label": "Publier un logement",
+        }
+    if user_kyc_allows_publish(current_user):
+        return {
+            "nav_publish_url": url_for("publier"),
+            "nav_publish_label": "Publier un logement",
+        }
+    return {
+        "nav_publish_url": url_for("verifier_identite"),
+        "nav_publish_label": "Valider mon identité",
+    }
+
+
 with app.app_context():
     os.makedirs(KYC_UPLOAD_ROOT, exist_ok=True)
     db.create_all()
