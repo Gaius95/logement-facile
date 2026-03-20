@@ -13,6 +13,7 @@
 
   {% if provider == 'lengopay' %}
     <form method="POST" style="margin-top: 1rem;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <button class="btn" type="submit">Payer via Mobile Money (Guinée)</button>
     </form>
     <p style="margin-top: 0.75rem; color: var(--text-muted); font-size: 0.9rem;">
@@ -20,6 +21,7 @@
     </p>
   {% elif provider == 'cinetpay' %}
     <form method="POST" style="margin-top: 1rem;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <button class="btn" type="submit">Payer via Mobile Money (Guinée)</button>
     </form>
     <p style="margin-top: 0.75rem; color: var(--text-muted); font-size: 0.9rem;">
@@ -27,6 +29,7 @@
     </p>
   {% elif stripe_enabled %}
     <form method="POST" style="margin-top: 1rem;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <button class="btn" type="submit">Payer maintenant</button>
     </form>
     <p style="margin-top: 0.75rem; color: var(--text-muted); font-size: 0.9rem;">
