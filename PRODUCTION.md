@@ -23,6 +23,19 @@ Optionnel mais recommandé pour la charge :
 
 Clés paiement / providers : selon ta config actuelle (LengoPay, CinetPay, Stripe).
 
+### Vérification d’identité (KYC)
+
+| Variable | Rôle |
+|----------|------|
+| `ADMIN_EMAILS` | Emails autorisés à valider les dossiers (séparés par des virgules), ex. `toi@mail.com,admin@mail.com` |
+| `KYC_MAX_FILE_MB` | Taille max par fichier image (défaut `5`) |
+| `MAX_UPLOAD_MB` | Taille max de la requête HTTP pour le formulaire (défaut `16`) |
+
+- **Nouveaux comptes** : après inscription, ils doivent envoyer **pièce d’identité + selfie** ; la publication n’est possible qu’après **approbation** (manuelle via `/admin/kyc` pour les emails listés dans `ADMIN_EMAILS`).
+- **Comptes déjà existants** (`kyc_status` vide en base) : **non bloqués** (comportement legacy).
+- **Stockage fichiers** : dossier `uploads/kyc/` sur le serveur. **Sur Render**, le disque est **éphémère** : les fichiers peuvent disparaître au redémarrage. Pour une prod sérieuse, prévoir **S3 / Cloudflare R2 / autre stockage objet** + URL signées.
+- **« Face ID » automatique** (comparaison biométrique document ↔ selfie) : non inclus ; il faut un **prestataire** (Onfido, Sumsub, Smile ID pour l’Afrique, etc.). Le flux actuel permet la **vérification humaine** par ton équipe.
+
 ## Sécurité déjà intégrée
 
 - **CSRF** (Flask-WTF) sur tous les formulaires POST utilisateurs ; **exempt** uniquement pour les webhooks externes (Stripe, CinetPay, LengoPay).
