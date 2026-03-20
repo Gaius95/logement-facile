@@ -27,9 +27,15 @@
     <article style="background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 1rem;">
       <div style="display:flex; justify-content: space-between; gap:10px; align-items: baseline;">
         <h3 style="margin:0; font-size: 1.1rem;">{{ l.commune }}</h3>
-        <span style="font-size: 0.85rem; font-weight: 800; color: {% if l.status == 'published' %}var(--primary){% else %}var(--text-muted){% endif %};">
-          {{ l.status }}
-        </span>
+        {% if l.status == 'published' %}
+          <span style="font-size: 0.85rem; font-weight: 800; color: var(--primary);">
+            {{ l.status }}
+          </span>
+        {% else %}
+          <span style="font-size: 0.85rem; font-weight: 800; color: var(--text-muted);">
+            {{ l.status }}
+          </span>
+        {% endif %}
       </div>
       <p style="margin:0.5rem 0; color: var(--text-muted);">{{ l.description }}</p>
       <p style="margin:0; font-weight: 800; color: var(--primary);">{{ l.prix }} GNF / mois</p>
@@ -39,6 +45,7 @@
           <a class="btn" href="{{ url_for('checkout', listing_id=l.id) }}">Payer & publier</a>
           {% if provider == 'none' %}
             <form method="POST" action="{{ url_for('dev_publish_without_pay', listing_id=l.id) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               <button class="btn" type="submit" style="background: transparent; border: 2px solid var(--primary); color: var(--primary) !important;">
                 Publier (démo)
               </button>
