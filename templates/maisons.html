@@ -61,7 +61,7 @@
     {% endfor %}
 </div>
 {% if not maisons %}
-<p style="color: var(--text-muted);">Aucun logement. <a href="/publier">Publiez une annonce</a>.</p>
+<p style="color: var(--text-muted);">Aucun logement. <a href="{{ nav_publish_url }}">Publiez une annonce</a>.</p>
 {% endif %}
 {% endblock %}
 {% block extra_js %}
