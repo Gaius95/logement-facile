@@ -26,7 +26,7 @@
   {% if kyc_allows_publish %}
     <a class="btn" href="{{ url_for('publier') }}">Publier un logement</a>
   {% else %}
-    <span class="btn" style="opacity: 0.55; cursor: not-allowed; pointer-events: none;" title="Identité à valider">Publier un logement</span>
+    <a class="btn" href="{{ url_for('verifier_identite') }}" style="background: var(--secondary);">Valider mon identité pour publier</a>
   {% endif %}
   {% if is_kyc_admin_user %}
     <a href="{{ url_for('admin_kyc_list') }}" style="align-self: center; color: var(--secondary); font-weight: 600;">Admin KYC</a>
@@ -42,7 +42,13 @@
 </p>
 
 {% if not listings %}
-  <p style="color: var(--text-muted);">Aucune annonce. <a href="{{ url_for('publier') }}">Créer la première</a>.</p>
+  <p style="color: var(--text-muted);">Aucune annonce.
+    {% if kyc_allows_publish %}
+      <a href="{{ url_for('publier') }}">Créer la première</a>.
+    {% else %}
+      <a href="{{ url_for('verifier_identite') }}">Validez votre identité</a> pour publier.
+    {% endif %}
+  </p>
 {% endif %}
 
 <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem;">
