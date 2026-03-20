@@ -6,8 +6,31 @@
   Connecté en tant que <strong>{{ current_user.email }}</strong>
 </p>
 
+{% if not kyc_allows_publish %}
+  <div style="background: #fff7ed; border: 1px solid #fdba74; border-radius: var(--radius); padding: 1rem 1.15rem; margin-bottom: 1.25rem;">
+    <strong>Vérification d’identité requise</strong>
+    <p style="margin: 0.5rem 0 0; color: var(--text-muted); font-size: 0.95rem;">
+      {% if kyc_status == 'pending_review' %}
+        Votre dossier est en cours d’examen. Vous pourrez publier après validation.
+      {% elif kyc_status == 'rejected' %}
+        Votre dernier dossier a été refusé. Corrigez les documents et renvoyez une demande.
+      {% else %}
+        Envoyez une pièce d’identité et une photo de votre visage pour débloquer la publication.
+      {% endif %}
+    </p>
+    <a class="btn" href="{{ url_for('verifier_identite') }}" style="margin-top: 0.75rem; display: inline-block;">Vérifier mon identité</a>
+  </div>
+{% endif %}
+
 <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom: 1.5rem;">
-  <a class="btn" href="{{ url_for('publier') }}">Publier un logement</a>
+  {% if kyc_allows_publish %}
+    <a class="btn" href="{{ url_for('publier') }}">Publier un logement</a>
+  {% else %}
+    <span class="btn" style="opacity: 0.55; cursor: not-allowed; pointer-events: none;" title="Identité à valider">Publier un logement</span>
+  {% endif %}
+  {% if is_kyc_admin_user %}
+    <a href="{{ url_for('admin_kyc_list') }}" style="align-self: center; color: var(--secondary); font-weight: 600;">Admin KYC</a>
+  {% endif %}
 </div>
 
 <h2 style="font-family: 'Playfair Display', serif; margin-bottom: 1rem;">Mes annonces</h2>
