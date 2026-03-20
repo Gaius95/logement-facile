@@ -25,6 +25,7 @@
 <p style="color: var(--text-muted); margin-bottom: 2rem;">Remplissez le formulaire pour ajouter votre annonce sur la carte.</p>
 
 <form class="form-publier" method="POST" action="{{ url_for('publier') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <label for="commune">Commune / Quartier *</label>
     <input type="text" id="commune" name="commune" placeholder="Ex. Kipé, Lambanyi, Sonfonia" required>
 
