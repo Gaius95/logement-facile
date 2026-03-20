@@ -20,6 +20,7 @@
 <div class="auth-box">
     <h1>Connexion</h1>
     <form method="POST" action="{{ url_for('connexion') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <label for="email">Email</label>
         <input type="email" id="email" name="email" placeholder="vous@exemple.com" required>
         <label for="password">Mot de passe</label>
