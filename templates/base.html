@@ -106,7 +106,7 @@
         <div class="nav-links">
             <a href="/">Accueil</a>
             <a href="/maisons">Explorer</a>
-            <a href="/publier" class="btn">Publier un logement</a>
+            <a href="{{ nav_publish_url }}" class="btn" title="{% if nav_publish_label != 'Publier un logement' %}Identité à valider avant publication{% endif %}">{{ nav_publish_label }}</a>
             {% if current_user.is_authenticated %}
                 <a href="/dashboard">Mon compte</a>
                 <a href="/deconnexion">Déconnexion</a>
