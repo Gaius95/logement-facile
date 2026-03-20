@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Vérification téléphone{% endblock %}
+{% block extra_css %}
+<style>
+  .box { max-width: 520px; margin: 2rem auto; }
+  .box h1 { font-family: 'Playfair Display', serif; margin-bottom: 0.5rem; }
+  .box label { display:block; font-weight: 600; margin-bottom: 0.35rem; margin-top: 1rem; }
+  .box input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 1rem;
+    margin-bottom: 0.75rem;
+    letter-spacing: 0.08em;
+  }
+  .muted { color: var(--text-muted); font-size: 0.95rem; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="box">
+  <h1>Vérifier mon téléphone</h1>
+  <p class="muted">
+    Un code SMS à 6 chiffres a été envoyé au numéro <strong>{{ user.phone_number }}</strong>.
+    Entrez ce code pour confirmer que ce numéro vous appartient.
+  </p>
+
+  <form method="POST" action="{{ url_for('verifier_telephone') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label for="code">Code SMS (6 chiffres)</label>
+    <input id="code" name="code" type="text" inputmode="numeric" maxlength="6" placeholder="123456" required>
+    <button class="btn" type="submit">Valider le code</button>
+  </form>
+
+  <form method="POST" action="{{ url_for('renvoyer_code_telephone') }}" style="margin-top: 0.75rem;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button class="btn" type="submit" style="background: transparent; border: 2px solid var(--primary); color: var(--primary) !important;">
+      Renvoyer le code SMS
+    </button>
+  </form>
+</div>
+{% endblock %}
