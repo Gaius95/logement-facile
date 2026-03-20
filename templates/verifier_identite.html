@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Vérification d’identité{% endblock %}
+{% block extra_css %}
+<style>
+  .kyc-wrap { max-width: 640px; }
+  .kyc-wrap h1 { font-family: 'Playfair Display', serif; margin-bottom: 0.5rem; }
+  .kyc-wrap label { display: block; font-weight: 600; margin-bottom: 0.35rem; margin-top: 1rem; }
+  .kyc-wrap input[type="text"], .kyc-wrap input[type="file"], .kyc-wrap select {
+    width: 100%; padding: 0.65rem 0.85rem; border: 1px solid var(--border); border-radius: 8px; font-size: 1rem;
+  }
+  .kyc-wrap .hint { font-size: 0.88rem; color: var(--text-muted); margin-top: 0.35rem; }
+  .kyc-box { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; margin-top: 1rem; }
+  .kyc-legal { font-size: 0.85rem; color: var(--text-muted); margin-top: 1.25rem; line-height: 1.5; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="kyc-wrap">
+  <h1>Vérification d’identité</h1>
+  <p style="color: var(--text-muted);">
+    Pour protéger la plateforme, nous vérifions chaque annonceur. Merci d’envoyer une copie de votre pièce officielle
+    et une <strong>photo de votre visage</strong> (selfie), pour contrôle manuel ou futur service de reconnaissance (prestataire tiers).
+  </p>
+
+  {% if user.kyc_status == 'approved' %}
+    <p style="color: var(--primary); font-weight: 700;">Votre identité est validée. Vous pouvez publier des annonces.</p>
+    <a class="btn" href="{{ url_for('dashboard') }}">Mon compte</a>
+  {% elif user.kyc_status == 'pending_review' %}
+    <p style="color: var(--text-muted);">Dossier en cours de vérification. Vous serez informé après validation par l’équipe.</p>
+    <a class="btn" href="{{ url_for('dashboard') }}">Retour au tableau de bord</a>
+  {% else %}
+    <form method="POST" action="{{ url_for('verifier_identite') }}" enctype="multipart/form-data">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <label for="full_name">Nom et prénom (comme sur la pièce) *</label>
+      <input type="text" id="full_name" name="full_name" required maxlength="200" value="{{ user.full_name or '' }}" placeholder="Ex. Camara Fatoumata">
+
+      <label for="id_document_type">Type de pièce *</label>
+      <select id="id_document_type" name="id_document_type" required>
+        <option value="">— Choisir —</option>
+        {% for val, label in doc_types %}
+          <option value="{{ val }}" {% if user.id_document_type == val %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+
+      <label for="id_document_number">Numéro de la pièce *</label>
+      <input type="text" id="id_document_number" name="id_document_number" required maxlength="120" value="{{ user.id_document_number or '' }}" placeholder="Numéro du document">
+
+      <div class="kyc-box">
+        <label for="doc_front">Photo — recto de la pièce *</label>
+        <input type="file" id="doc_front" name="doc_front" accept="image/jpeg,image/png,image/webp" required>
+        <p class="hint">Image nette, bien cadrée. JPG, PNG ou WebP — max 5 Mo.</p>
+
+        <label for="doc_back">Photo — verso (obligatoire pour CNI, permis, etc.)</label>
+        <input type="file" id="doc_back" name="doc_back" accept="image/jpeg,image/png,image/webp">
+        <p class="hint">Pour un passeport, une seule page suffit souvent : laissez le verso vide si non applicable.</p>
+
+        <label for="face_photo">Photo de votre visage (selfie) *</label>
+        <input type="file" id="face_photo" name="face_photo" accept="image/jpeg,image/png,image/webp" required>
+        <p class="hint">Tenez la caméra au niveau du visage, bonne lumière. Sert à comparer avec la photo du document (contrôle humain ou API tierce).</p>
+      </div>
+
+      <p class="kyc-legal">
+        En envoyant ces documents, vous acceptez qu’ils soient traités uniquement dans le cadre de la vérification d’identité et de la lutte contre la fraude,
+        conformément à la loi applicable. Ne transmettez pas de copie si vous n’acceptez pas ce traitement.
+      </p>
+
+      <button type="submit" class="btn" style="margin-top: 1.25rem;">Envoyer pour vérification</button>
+    </form>
+  {% endif %}
+
+  {% if user.kyc_status == 'rejected' and user.kyc_rejection_reason %}
+    <div class="kyc-box" style="border-color: rgba(248,113,113,0.5); margin-top: 1rem;">
+      <strong>Motif du dernier refus :</strong>
+      <p style="margin: 0.5rem 0 0;">{{ user.kyc_rejection_reason }}</p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
