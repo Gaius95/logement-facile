@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Admin — Vérification identité{% endblock %}
+{% block content %}
+<h1 style="font-family: 'Playfair Display', serif;">Dossiers KYC en attente</h1>
+<p style="color: var(--text-muted); margin-bottom: 1.5rem;">{{ pending|length }} dossier(s) à traiter.</p>
+
+{% if not pending %}
+  <p>Aucun dossier en attente.</p>
+  <a href="{{ url_for('dashboard') }}">Retour</a>
+{% else %}
+  {% for u in pending %}
+    <article style="background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; margin-bottom: 1.5rem;">
+      <h2 style="margin: 0 0 0.5rem; font-size: 1.1rem;">{{ u.full_name or '—' }} <span style="color: var(--text-muted); font-weight: 400;">({{ u.email }})</span></h2>
+      <p style="margin: 0 0 0.75rem; color: var(--text-muted); font-size: 0.95rem;">
+        Pièce : {{ u.id_document_type }} — n° {{ u.id_document_number }}<br>
+        Envoyé : {{ u.kyc_submitted_at.strftime('%Y-%m-%d %H:%M') if u.kyc_submitted_at else '—' }} UTC
+      </p>
+      <div style="display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 1rem;">
+        {% if u.kyc_doc_front %}
+          <div>
+            <div style="font-size: 0.8rem; font-weight: 600; margin-bottom: 4px;">Recto</div>
+            <a href="{{ url_for('admin_kyc_file', rel=u.kyc_doc_front) }}" target="_blank" rel="noopener">
+              <img src="{{ url_for('admin_kyc_file', rel=u.kyc_doc_front) }}" alt="Recto" style="max-width: 220px; max-height: 160px; border-radius: 8px; border: 1px solid var(--border);">
+            </a>
+          </div>
+        {% endif %}
+        {% if u.kyc_doc_back %}
+          <div>
+            <div style="font-size: 0.8rem; font-weight: 600; margin-bottom: 4px;">Verso</div>
+            <a href="{{ url_for('admin_kyc_file', rel=u.kyc_doc_back) }}" target="_blank" rel="noopener">
+              <img src="{{ url_for('admin_kyc_file', rel=u.kyc_doc_back) }}" alt="Verso" style="max-width: 220px; max-height: 160px; border-radius: 8px; border: 1px solid var(--border);">
+            </a>
+          </div>
+        {% endif %}
+        {% if u.kyc_selfie %}
+          <div>
+            <div style="font-size: 0.8rem; font-weight: 600; margin-bottom: 4px;">Selfie</div>
+            <a href="{{ url_for('admin_kyc_file', rel=u.kyc_selfie) }}" target="_blank" rel="noopener">
+              <img src="{{ url_for('admin_kyc_file', rel=u.kyc_selfie) }}" alt="Selfie" style="max-width: 220px; max-height: 160px; border-radius: 8px; border: 1px solid var(--border);">
+            </a>
+          </div>
+        {% endif %}
+      </div>
+      <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end;">
+        <form method="POST" action="{{ url_for('admin_kyc_approve', user_id=u.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn">Approuver</button>
+        </form>
+        <form method="POST" action="{{ url_for('admin_kyc_reject', user_id=u.id) }}" style="display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="text" name="reason" placeholder="Motif du refus (optionnel)" style="min-width: 200px; padding: 0.5rem 0.75rem; border-radius: 8px; border: 1px solid var(--border);">
+          <button type="submit" class="btn" style="background: var(--text-muted);">Refuser</button>
+        </form>
+      </div>
+    </article>
+  {% endfor %}
+{% endif %}
+{% endblock %}
