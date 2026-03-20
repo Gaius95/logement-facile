@@ -127,7 +127,7 @@
     <h1>Bienvenue sur Logement Facile</h1>
     <p>Trouvez ou publiez des logements à Conakry — location et vente en toute simplicité, dans les plus belles zones de la ville.</p>
     <a href="/maisons" class="btn" style="background: white; color: var(--primary) !important; margin-right: 0.5rem;">Explorer les logements</a>
-    <a href="/publier" class="btn" style="background: transparent; border: 2px solid white;">Publier une annonce</a>
+    <a href="{{ nav_publish_url }}" class="btn" style="background: transparent; border: 2px solid white;">{% if nav_publish_label == 'Publier un logement' %}Publier une annonce{% else %}Valider mon identité{% endif %}</a>
 </section>
 
 <script>
@@ -171,6 +171,6 @@
     {% endfor %}
 </div>
 {% if not maisons %}
-<p style="color: var(--text-muted);">Aucun logement pour le moment. <a href="/publier">Publiez le premier !</a></p>
+<p style="color: var(--text-muted);">Aucun logement pour le moment. <a href="{{ nav_publish_url }}">Publiez le premier !</a></p>
 {% endif %}
 {% endblock %}
