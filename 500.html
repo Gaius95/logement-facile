@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Erreur serveur{% endblock %}
+{% block content %}
+<div style="max-width: 560px; margin: 3rem auto; text-align: center;">
+  <h1 style="font-family: 'Playfair Display', serif; font-size: 2rem; margin-bottom: 0.75rem;">Une erreur est survenue</h1>
+  <p style="color: var(--text-muted); margin-bottom: 1.5rem;">
+    Notre équipe a été informée. Réessaie dans quelques instants.
+  </p>
+  <a class="btn" href="{{ url_for('accueil') }}">Retour à l’accueil</a>
+</div>
+{% endblock %}
