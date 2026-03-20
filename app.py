@@ -266,18 +266,26 @@ def load_user(user_id: str):
         uid = int(user_id)
     except ValueError:
         return None
-    return db.session.get(User, uid)
+    try:
+        return db.session.get(User, uid)
+    except Exception:
+        # Cas fréquent après déploiement : colonnes KYC manquantes dans la table `user`.
+        # Tentative de migration “à chaud”, puis retry.
+        try:
+            _migrate_user_kyc_columns()
+            return db.session.get(User, uid)
+        except Exception:
+            return None
 
 
 def _migrate_user_kyc_columns() -> None:
     """Ajoute les colonnes KYC sur une base existante (SQLite / PostgreSQL)."""
     try:
         insp = inspect(db.engine)
-        if "user" not in insp.get_table_names():
-            return
+        # Tables et noms peuvent être sensibles / réservés, donc on se base sur get_columns.
         existing = {c["name"] for c in insp.get_columns("user")}
         dialect = db.engine.dialect.name
-        qtable = '"user"' if dialect == "postgresql" else "user"
+        qtable = '"user"'  # quote systématique du nom
 
         def add_col(name: str, sql_type_sqlite: str, sql_type_pg: str) -> None:
             if name in existing:
@@ -301,6 +309,7 @@ def _migrate_user_kyc_columns() -> None:
         add_col("kyc_doc_back", "VARCHAR(255)", "VARCHAR(255)")
         add_col("kyc_selfie", "VARCHAR(255)", "VARCHAR(255)")
     except Exception:
+        # On évite de faire planter l'app : migration best-effort.
         pass
 
 
