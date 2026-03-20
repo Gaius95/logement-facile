@@ -8,9 +8,11 @@
 
 {% if not kyc_allows_publish %}
   <div style="background: #fff7ed; border: 1px solid #fdba74; border-radius: var(--radius); padding: 1rem 1.15rem; margin-bottom: 1.25rem;">
-    <strong>Vérification d’identité requise</strong>
+    <strong>Vérification requise</strong>
     <p style="margin: 0.5rem 0 0; color: var(--text-muted); font-size: 0.95rem;">
-      {% if kyc_status == 'pending_review' %}
+      {% if phone_required and not phone_verified %}
+        Vérifiez d’abord votre numéro de téléphone via code SMS.
+      {% elif kyc_status == 'pending_review' %}
         Votre dossier est en cours d’examen. Vous pourrez publier après validation.
       {% elif kyc_status == 'rejected' %}
         Votre dernier dossier a été refusé. Corrigez les documents et renvoyez une demande.
@@ -18,7 +20,11 @@
         Envoyez une pièce d’identité et une photo de votre visage pour débloquer la publication.
       {% endif %}
     </p>
-    <a class="btn" href="{{ url_for('verifier_identite') }}" style="margin-top: 0.75rem; display: inline-block;">Vérifier mon identité</a>
+    {% if phone_required and not phone_verified %}
+      <a class="btn" href="{{ url_for('verifier_telephone') }}" style="margin-top: 0.75rem; display: inline-block;">Vérifier mon téléphone</a>
+    {% else %}
+      <a class="btn" href="{{ url_for('verifier_identite') }}" style="margin-top: 0.75rem; display: inline-block;">Vérifier mon identité</a>
+    {% endif %}
   </div>
 {% endif %}
 
@@ -26,7 +32,11 @@
   {% if kyc_allows_publish %}
     <a class="btn" href="{{ url_for('publier') }}">Publier un logement</a>
   {% else %}
-    <a class="btn" href="{{ url_for('verifier_identite') }}" style="background: var(--secondary);">Valider mon identité pour publier</a>
+    {% if phone_required and not phone_verified %}
+      <a class="btn" href="{{ url_for('verifier_telephone') }}" style="background: var(--secondary);">Vérifier mon téléphone</a>
+    {% else %}
+      <a class="btn" href="{{ url_for('verifier_identite') }}" style="background: var(--secondary);">Valider mon identité pour publier</a>
+    {% endif %}
   {% endif %}
   {% if is_kyc_admin_user %}
     <a href="{{ url_for('admin_kyc_list') }}" style="align-self: center; color: var(--secondary); font-weight: 600;">Admin KYC</a>
