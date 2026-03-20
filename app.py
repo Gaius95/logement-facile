@@ -1,6 +1,7 @@
 import os
 import re
 import secrets
+import uuid
 from datetime import datetime, timezone
 
 import requests
@@ -10,8 +11,9 @@ from flask import Flask, abort, flash, jsonify, redirect, render_template, reque
 from flask_login import LoginManager, UserMixin, current_user, login_required, login_user, logout_user
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFError, CSRFProtect
-from sqlalchemy import text
+from sqlalchemy import inspect, text
 from werkzeug.security import check_password_hash, generate_password_hash
+from werkzeug.utils import secure_filename
 
 load_dotenv()
 
@@ -45,11 +47,23 @@ app.config["SESSION_COOKIE_SECURE"] = is_production()
 # CSRF sur tous les POST (webhooks exclus ci-dessous)
 app.config["WTF_CSRF_TIME_LIMIT"] = None
 app.config["WTF_CSRF_SSL_STRICT"] = is_production()
+# Uploads KYC (pièce + selfie) — limite taille requête HTTP
+app.config["MAX_CONTENT_LENGTH"] = int(os.environ.get("MAX_UPLOAD_MB", "16")) * 1024 * 1024
 
 csrf = CSRFProtect(app)
 
 # Serve local Guinea imagery from a folder with spaces: "static images/"
 CONAKRY_MEDIA_DIR = os.path.join(app.root_path, "static images")
+
+# Fichiers KYC (hors web public) — sur Render le disque est éphémère : prévoir S3 plus tard (voir PRODUCTION.md)
+KYC_UPLOAD_ROOT = os.path.join(app.root_path, "uploads", "kyc")
+KYC_ALLOWED_EXT = frozenset({".jpg", ".jpeg", ".png", ".webp"})
+KYC_MAX_FILE_BYTES = int(os.environ.get("KYC_MAX_FILE_MB", "5")) * 1024 * 1024
+
+# Emails admin (séparés par des virgules) pour valider les dossiers KYC : ADMIN_EMAILS=toi@mail.com,autre@mail.com
+ADMIN_EMAILS = frozenset(
+    e.strip().lower() for e in os.environ.get("ADMIN_EMAILS", "").split(",") if e.strip()
+)
 
 # Noms de fichiers autorisés pour /conakry-media/ (évite lecture arbitraire)
 _MEDIA_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,180}$")
@@ -185,6 +199,19 @@ class User(db.Model, UserMixin):
     password_hash = db.Column(db.String(255), nullable=False)
     created_at = db.Column(db.DateTime(timezone=True), default=utcnow, nullable=False)
 
+    # KYC / identité (NULL = comptes créés avant cette fonctionnalité : publication autorisée)
+    full_name = db.Column(db.String(200), nullable=True)
+    id_document_type = db.Column(db.String(40), nullable=True)  # passport, national_id, driving_license, other
+    id_document_number = db.Column(db.String(120), nullable=True)
+    kyc_status = db.Column(db.String(32), nullable=True, index=True)
+    # documents_required → pending_review → approved | rejected
+    kyc_submitted_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    kyc_reviewed_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    kyc_rejection_reason = db.Column(db.Text, nullable=True)
+    kyc_doc_front = db.Column(db.String(255), nullable=True)  # chemin relatif uploads/kyc/<user_id>/...
+    kyc_doc_back = db.Column(db.String(255), nullable=True)
+    kyc_selfie = db.Column(db.String(255), nullable=True)  # photo du visage (comparaison manuelle ou API tierce)
+
     listings = db.relationship("Maison", back_populates="owner", lazy="dynamic")
 
     def set_password(self, password: str) -> None:
@@ -242,11 +269,76 @@ def load_user(user_id: str):
     return db.session.get(User, uid)
 
 
+def _migrate_user_kyc_columns() -> None:
+    """Ajoute les colonnes KYC sur une base existante (SQLite / PostgreSQL)."""
+    try:
+        insp = inspect(db.engine)
+        if "user" not in insp.get_table_names():
+            return
+        existing = {c["name"] for c in insp.get_columns("user")}
+        dialect = db.engine.dialect.name
+        qtable = '"user"' if dialect == "postgresql" else "user"
+
+        def add_col(name: str, sql_type_sqlite: str, sql_type_pg: str) -> None:
+            if name in existing:
+                return
+            typ = sql_type_pg if dialect == "postgresql" else sql_type_sqlite
+            stmt = text(f"ALTER TABLE {qtable} ADD COLUMN {name} {typ}")
+            try:
+                with db.engine.begin() as conn:
+                    conn.execute(stmt)
+            except Exception:
+                pass
+
+        add_col("full_name", "VARCHAR(200)", "VARCHAR(200)")
+        add_col("id_document_type", "VARCHAR(40)", "VARCHAR(40)")
+        add_col("id_document_number", "VARCHAR(120)", "VARCHAR(120)")
+        add_col("kyc_status", "VARCHAR(32)", "VARCHAR(32)")
+        add_col("kyc_submitted_at", "DATETIME", "TIMESTAMP WITH TIME ZONE")
+        add_col("kyc_reviewed_at", "DATETIME", "TIMESTAMP WITH TIME ZONE")
+        add_col("kyc_rejection_reason", "TEXT", "TEXT")
+        add_col("kyc_doc_front", "VARCHAR(255)", "VARCHAR(255)")
+        add_col("kyc_doc_back", "VARCHAR(255)", "VARCHAR(255)")
+        add_col("kyc_selfie", "VARCHAR(255)", "VARCHAR(255)")
+    except Exception:
+        pass
+
+
+def user_kyc_allows_publish(user: "User") -> bool:
+    """Comptes legacy (kyc_status NULL) : inchangé. Nouveaux comptes : identité approuvée requise."""
+    if user.kyc_status is None:
+        return True
+    return user.kyc_status == "approved"
+
+
+def is_kyc_admin(user: User) -> bool:
+    return bool(user.email and user.email.strip().lower() in ADMIN_EMAILS)
+
+
+def _save_kyc_image(file_storage, user_id: int, prefix: str) -> str | None:
+    if not file_storage or not getattr(file_storage, "filename", None):
+        return None
+    raw = secure_filename(file_storage.filename)
+    ext = os.path.splitext(raw)[1].lower()
+    if ext not in KYC_ALLOWED_EXT:
+        return None
+    file_storage.seek(0, os.SEEK_END)
+    size = file_storage.tell()
+    file_storage.seek(0)
+    if size <= 0 or size > KYC_MAX_FILE_BYTES:
+        return None
+    uid_dir = os.path.join(KYC_UPLOAD_ROOT, str(user_id))
+    os.makedirs(uid_dir, exist_ok=True)
+    out_name = f"{prefix}_{uuid.uuid4().hex}{ext}"
+    out_path = os.path.join(uid_dir, out_name)
+    file_storage.save(out_path)
+    return f"{user_id}/{out_name}"
+
+
 with app.app_context():
+    os.makedirs(KYC_UPLOAD_ROOT, exist_ok=True)
     db.create_all()
-    # Note: on évite les ALTER TABLE au démarrage (surtout avec SQLite sur
-    # environnements éphémères comme Render). `db.create_all()` suffit
-    # pour créer la structure à partir des modèles.
+    _migrate_user_kyc_columns()
 
 
 def published_listings(limit: int = 24):
@@ -465,12 +557,16 @@ def inscription():
             flash("Un compte existe déjà avec cet email.", "error")
             return render_template("inscription.html"), 400
 
-        u = User(email=email)
+        u = User(email=email, kyc_status="documents_required")
         u.set_password(password)
         db.session.add(u)
         db.session.commit()
         login_user(u)
-        return redirect(safe_next_url() or url_for("dashboard"))
+        flash(
+            "Complétez la vérification d’identité (pièce + photo du visage) pour publier des annonces.",
+            "info",
+        )
+        return redirect(safe_next_url() or url_for("verifier_identite"))
 
     return render_template("inscription.html")
 
@@ -497,7 +593,166 @@ def dashboard():
         stripe_enabled=bool(STRIPE_SECRET_KEY),
         flw_enabled=False,
         provider=payment_provider(),
+        kyc_status=current_user.kyc_status,
+        kyc_allows_publish=user_kyc_allows_publish(current_user),
+        is_kyc_admin_user=is_kyc_admin(current_user),
     )
+
+
+@app.route("/compte/verifier-identite", methods=["GET", "POST"])
+@login_required
+def verifier_identite():
+    user = db.session.get(User, current_user.id)
+    if not user:
+        abort(404)
+
+    doc_types = [
+        ("passport", "Passeport"),
+        ("national_id", "Carte d’identité / CNI"),
+        ("driving_license", "Permis de conduire"),
+        ("residence_permit", "Titre de séjour"),
+        ("other", "Autre pièce officielle"),
+    ]
+
+    if request.method == "POST":
+        if user.kyc_status == "approved":
+            flash("Votre identité est déjà validée.", "info")
+            return redirect(url_for("dashboard"))
+
+        full_name = (request.form.get("full_name") or "").strip()
+        doc_type = (request.form.get("id_document_type") or "").strip()
+        doc_number = (request.form.get("id_document_number") or "").strip()
+
+        if not full_name or len(full_name) > 200:
+            flash("Indiquez votre nom complet (tel qu’il figure sur la pièce).", "error")
+            return render_template(
+                "verifier_identite.html", doc_types=doc_types, user=user
+            ), 400
+        if doc_type not in {c[0] for c in doc_types}:
+            flash("Type de pièce invalide.", "error")
+            return render_template(
+                "verifier_identite.html", doc_types=doc_types, user=user
+            ), 400
+        if not doc_number or len(doc_number) > 120:
+            flash("Indiquez le numéro de la pièce d’identité.", "error")
+            return render_template(
+                "verifier_identite.html", doc_types=doc_types, user=user
+            ), 400
+
+        f_front = request.files.get("doc_front")
+        f_selfie = request.files.get("face_photo")
+        f_back = request.files.get("doc_back")
+
+        path_front = _save_kyc_image(f_front, user.id, "front")
+        path_selfie = _save_kyc_image(f_selfie, user.id, "selfie")
+        path_back = None
+        if doc_type in ("national_id", "driving_license", "residence_permit", "other"):
+            path_back = _save_kyc_image(f_back, user.id, "back")
+
+        if not path_front or not path_selfie:
+            flash(
+                "Merci d’ajouter une photo lisible du recto de la pièce et une photo de votre visage (selfie). "
+                f"Formats : JPG, PNG, WebP — max {KYC_MAX_FILE_BYTES // (1024 * 1024)} Mo par fichier.",
+                "error",
+            )
+            return render_template(
+                "verifier_identite.html", doc_types=doc_types, user=user
+            ), 400
+        if doc_type in ("national_id", "driving_license", "residence_permit", "other") and not path_back:
+            flash("Pour ce type de pièce, ajoutez aussi le verso (ou 2e page).", "error")
+            return render_template(
+                "verifier_identite.html", doc_types=doc_types, user=user
+            ), 400
+
+        # Remplacer d’anciens fichiers si nouvel envoi
+        user.full_name = full_name
+        user.id_document_type = doc_type
+        user.id_document_number = doc_number
+        user.kyc_doc_front = path_front
+        user.kyc_doc_back = path_back
+        user.kyc_selfie = path_selfie
+        user.kyc_status = "pending_review"
+        user.kyc_submitted_at = utcnow()
+        user.kyc_rejection_reason = None
+        user.kyc_reviewed_at = None
+        db.session.commit()
+        flash(
+            "Dossier envoyé. Un administrateur validera votre identité sous peu. Vous recevrez l’accès publication après validation.",
+            "info",
+        )
+        return redirect(url_for("dashboard"))
+
+    return render_template("verifier_identite.html", doc_types=doc_types, user=user)
+
+
+_KYC_FILE_REL_RE = re.compile(r"^(\d+)/([A-Za-z0-9_.-]+)$")
+
+
+@app.route("/admin/kyc/fichier/<path:rel>")
+@login_required
+def admin_kyc_file(rel: str):
+    """Sert une image KYC uniquement aux administrateurs (pas d’URL publique)."""
+    if not is_kyc_admin(current_user):
+        abort(404)
+    m = _KYC_FILE_REL_RE.match(rel.replace("\\", "/"))
+    if not m:
+        abort(404)
+    uid, fname = m.group(1), m.group(2)
+    abs_path = os.path.realpath(os.path.join(KYC_UPLOAD_ROOT, uid, fname))
+    allowed_root = os.path.realpath(os.path.join(KYC_UPLOAD_ROOT, uid))
+    if not abs_path.startswith(allowed_root + os.sep) and abs_path != allowed_root:
+        abort(404)
+    if not os.path.isfile(abs_path):
+        abort(404)
+    return send_file(abs_path)
+
+
+@app.route("/admin/kyc")
+@login_required
+def admin_kyc_list():
+    if not is_kyc_admin(current_user):
+        abort(404)
+    pending = (
+        User.query.filter(User.kyc_status == "pending_review")
+        .order_by(User.kyc_submitted_at.asc())
+        .all()
+    )
+    return render_template("admin_kyc.html", pending=pending)
+
+
+@app.route("/admin/kyc/<int:user_id>/approuver", methods=["POST"])
+@login_required
+def admin_kyc_approve(user_id: int):
+    if not is_kyc_admin(current_user):
+        abort(404)
+    u = db.session.get(User, user_id)
+    if not u or u.kyc_status != "pending_review":
+        flash("Dossier introuvable ou déjà traité.", "error")
+        return redirect(url_for("admin_kyc_list"))
+    u.kyc_status = "approved"
+    u.kyc_reviewed_at = utcnow()
+    u.kyc_rejection_reason = None
+    db.session.commit()
+    flash(f"Identité approuvée pour {u.email}.", "info")
+    return redirect(url_for("admin_kyc_list"))
+
+
+@app.route("/admin/kyc/<int:user_id>/refuser", methods=["POST"])
+@login_required
+def admin_kyc_reject(user_id: int):
+    if not is_kyc_admin(current_user):
+        abort(404)
+    u = db.session.get(User, user_id)
+    if not u or u.kyc_status != "pending_review":
+        flash("Dossier introuvable ou déjà traité.", "error")
+        return redirect(url_for("admin_kyc_list"))
+    reason = (request.form.get("reason") or "").strip()[:2000]
+    u.kyc_status = "rejected"
+    u.kyc_reviewed_at = utcnow()
+    u.kyc_rejection_reason = reason or None
+    db.session.commit()
+    flash(f"Dossier refusé pour {u.email}. L’utilisateur peut corriger et renvoyer.", "info")
+    return redirect(url_for("admin_kyc_list"))
 
 
 @app.route("/ajouter")
@@ -538,6 +793,14 @@ def contact():
 @app.route("/publier", methods=["GET", "POST"])
 @login_required
 def publier():
+    if not user_kyc_allows_publish(current_user):
+        flash(
+            "La publication d’annonces est réservée aux comptes dont l’identité a été vérifiée. "
+            "Envoyez votre pièce d’identité et une photo de votre visage.",
+            "error",
+        )
+        return redirect(url_for("verifier_identite"))
+
     if request.method == "POST":
         commune = request.form.get("commune", "").strip()
         prix = request.form.get("prix", "").strip()
@@ -582,6 +845,10 @@ def publier():
 @app.route("/checkout/<int:listing_id>", methods=["GET", "POST"])
 @login_required
 def checkout(listing_id: int):
+    if not user_kyc_allows_publish(current_user):
+        flash("Identité non validée. Complétez la vérification avant de payer.", "error")
+        return redirect(url_for("verifier_identite"))
+
     listing = Maison.query.filter_by(id=listing_id, owner_id=current_user.id).first_or_404()
     if listing.status == "published":
         flash("Cette annonce est déjà publiée.", "info")
@@ -895,6 +1162,9 @@ def stripe_webhook():
 def dev_publish_without_pay(listing_id: int):
     if is_production():
         abort(404)
+    if not user_kyc_allows_publish(current_user):
+        flash("Identité non validée (même en démo).", "error")
+        return redirect(url_for("verifier_identite"))
     listing = Maison.query.filter_by(id=listing_id, owner_id=current_user.id).first_or_404()
     listing.status = "published"
     db.session.commit()
