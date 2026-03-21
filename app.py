@@ -1,3 +1,4 @@
+import base64
 import os
 import re
 import secrets
@@ -360,9 +361,34 @@ def normalize_phone(raw: str) -> str | None:
 
 def send_sms_message(phone_number: str, text_msg: str) -> bool:
     """
-    Envoi SMS via webhook HTTP générique (à brancher sur un provider).
-    Si non configuré, retourne False (mode test géré côté route).
+    Envoi SMS, dans cet ordre :
+    1) Twilio (si TWILIO_ACCOUNT_SID + TWILIO_AUTH_TOKEN + TWILIO_FROM sont définis)
+    2) Webhook HTTP générique SMS_DISPATCH_URL (JSON {"to","message"})
+    Sinon retourne False (aucun SMS — à configurer sur Render).
     """
+    # --- Twilio (recommandé si tu n'as pas de webhook maison) ---
+    tw_sid = (os.environ.get("TWILIO_ACCOUNT_SID") or "").strip()
+    tw_token = (os.environ.get("TWILIO_AUTH_TOKEN") or "").strip()
+    tw_from = (os.environ.get("TWILIO_FROM") or os.environ.get("TWILIO_PHONE_NUMBER") or "").strip()
+    if tw_sid and tw_token and tw_from:
+        try:
+            url = f"https://api.twilio.com/2010-04-01/Accounts/{tw_sid}/Messages.json"
+            auth_b64 = base64.b64encode(f"{tw_sid}:{tw_token}".encode()).decode()
+            r = requests.post(
+                url,
+                data={"To": phone_number, "From": tw_from, "Body": text_msg},
+                headers={
+                    "Authorization": f"Basic {auth_b64}",
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "User-Agent": "LogementFacile/1.0",
+                },
+                timeout=25,
+            )
+            return 200 <= r.status_code < 300
+        except Exception:
+            return False
+
+    # --- Webhook générique (Make.com, Zapier, ou API opérateur qui accepte ce JSON) ---
     sms_url = (os.environ.get("SMS_DISPATCH_URL") or "").strip()
     sms_token = (os.environ.get("SMS_DISPATCH_TOKEN") or "").strip()
     if not sms_url:
