@@ -19,6 +19,27 @@ log = logging.getLogger("sms-dispatcher")
 app = Flask(__name__)
 
 
+@app.get("/")
+def home():
+    """Évite le 404 si tu ouvres l’URL dans le navigateur — le vrai travail est sur POST /dispatch."""
+    return (
+        "<!DOCTYPE html><html lang=fr><head><meta charset=utf-8><meta name=viewport "
+        "content='width=device-width'>"
+        "<title>sms-dispatcher</title><style>body{font-family:system-ui,sans-serif;"
+        "max-width:36rem;margin:2rem auto;padding:0 1rem}code{background:#eee;padding:2px 6px}"
+        "a{color:#c00}</style></head><body>"
+        "<h1>sms-dispatcher</h1>"
+        "<p><strong>Ce service tourne correctement.</strong> Ce n’est pas la page d’un site "
+        "public : l’app <strong>Logement Facile</strong> envoie les SMS via "
+        "<code>POST /dispatch</code>.</p>"
+        "<p>Test rapide : ouvre <a href='/health'>/health</a> — tu dois voir "
+        "<code>{\"ok\":true,...}</code>.</p>"
+        "<p>Sur Render (Logement Facile), variable <code>SMS_DISPATCH_URL</code> = "
+        "<code>https://TON-SERVICE.onrender.com/dispatch</code> (avec <code>/dispatch</code> à la fin).</p>"
+        "</body></html>"
+    )
+
+
 def _check_bearer() -> bool:
     token = (os.environ.get("DISPATCH_BEARER_TOKEN") or "").strip()
     if not token:
