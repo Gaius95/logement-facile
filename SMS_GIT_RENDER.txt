@@ -1,29 +1,83 @@
-=== GIT (commit / push) ===
-AJOUTER ou GARDER dans le dépôt :
-  sms-dispatcher/          dossier entier (app.py, wsgi.py, requirements.txt, Procfile, README.md)
-  app.py                   à la racine du projet (envoi SMS : send_sms_message)
+================================================================================
+  SMS — UNE SEULE RÉFÉRENCE (GitHub + Render)
+  Tout ce qui concerne les SMS pour Logement Facile est listé ici.
+================================================================================
 
-SUPPRIMER pour SMS : rien d’obligatoire.
-MODIFIER pour SMS : rien d’obligatoire si le code est déjà à jour.
 
-=== RENDER — service 1 : site Logement Facile (racine du repo) ===
-Environment :
-  SMS_DISPATCH_URL = https://<ton-dispatcher>.onrender.com/dispatch
-  SMS_DISPATCH_TOKEN = <secret>          (exactement = DISPATCH_BEARER_TOKEN du service 2)
+1) FICHIERS À VERSIONNER ET À AVOIR SUR GITHUB (puis Render les lit depuis GitHub)
+---------------------------------------------------------------------------------
 
-OU Twilio direct sur ce service (sans dispatcher) :
-  TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM
-  (ne pas remplir TWILIO_* si tu utilises uniquement SMS_DISPATCH_URL)
+   Dossier sms-dispatcher/ (tout le dossier) :
 
-=== RENDER — service 2 : nouveau Web Service ===
-Root Directory : sms-dispatcher
-Build Command  : pip install -r requirements.txt
-Start Command  : gunicorn --bind 0.0.0.0:$PORT wsgi:app
+   sms-dispatcher/app.py
+   sms-dispatcher/wsgi.py
+   sms-dispatcher/requirements.txt
+   sms-dispatcher/Procfile
+   sms-dispatcher/README.md
 
-Environment :
-  DISPATCH_BEARER_TOKEN = <secret>     (même valeur que SMS_DISPATCH_TOKEN du service 1)
-  + pour vrais SMS : TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM
-  + ou SMS_UPSTREAM_URL (relais)
-  + test sans SMS : SMS_MODE = echo
+   Fichier principal du site (racine du projet — envoi SMS vers le webhook ou Twilio) :
 
-Routes utiles : GET /health   POST /dispatch (JSON {"to","message"})
+   app.py
+
+   Ce fichier à la racine (liste SMS uniquement) :
+
+   SMS_GIT_RENDER.txt
+
+
+2) RIEN À SUPPRIMER POUR QUE LES SMS MARCHENT
+---------------------------------------------------------------------------------
+
+   (aucune obligation de supprimer un fichier pour la config SMS)
+
+
+3) RENDER — PREMIER SERVICE = SITE LOGEMENT FACILE (racine du repo, pas de Root Directory)
+---------------------------------------------------------------------------------
+
+   Environment → ajouter ou vérifier :
+
+   SMS_DISPATCH_URL       = https://TON-NOM-DISPATCHER.onrender.com/dispatch
+   SMS_DISPATCH_TOKEN     = un mot de passe long (le même que DISPATCH_BEARER_TOKEN du service 2)
+
+   Alternative sans 2e service : Twilio directement sur ce service
+   TWILIO_ACCOUNT_SID
+   TWILIO_AUTH_TOKEN
+   TWILIO_FROM
+   (si tu utilises uniquement l’option webhook ci-dessus, ne mets pas TWILIO_* ici)
+
+
+4) RENDER — DEUXIÈME SERVICE = ENVOI SMS (nouveau Web Service)
+---------------------------------------------------------------------------------
+
+   Même dépôt Git que Logement Facile.
+
+   Name (Render)   AU CHOIX — ex. logement-sms OU sms-dispatcher
+                   (ça change seulement le nom dans le tableau de bord et l’URL
+                    du type https://logement-sms.onrender.com — pas le code.)
+   Root Directory  sms-dispatcher   ← obligatoire : nom du DOSSIER dans GitHub
+   Build Command   pip install -r requirements.txt
+   Start Command   gunicorn --bind 0.0.0.0:$PORT wsgi:app
+
+   Environment :
+
+   DISPATCH_BEARER_TOKEN  = exactement la même valeur que SMS_DISPATCH_TOKEN du service 1
+
+   Pour de vrais SMS (au choix) :
+   TWILIO_ACCOUNT_SID
+   TWILIO_AUTH_TOKEN
+   TWILIO_FROM
+
+   OU relais :
+   SMS_UPSTREAM_URL
+
+   Test sans SMS sur le téléphone :
+   SMS_MODE = echo
+
+   Après déploiement : copie l’URL affichée par Render (ex. https://logement-sms.onrender.com)
+   → SMS_DISPATCH_URL du service 1 = cette URL + /dispatch
+
+
+5) VÉRIFICATION RAPIDE
+---------------------------------------------------------------------------------
+
+   Navigateur : https://TON-DISPATCHER.onrender.com/health
+   → doit afficher du JSON avec "ok": true
