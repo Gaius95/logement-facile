@@ -1,0 +1,29 @@
+=== GIT (commit / push) ===
+AJOUTER ou GARDER dans le dépôt :
+  sms-dispatcher/          dossier entier (app.py, wsgi.py, requirements.txt, Procfile, README.md)
+  app.py                   à la racine du projet (envoi SMS : send_sms_message)
+
+SUPPRIMER pour SMS : rien d’obligatoire.
+MODIFIER pour SMS : rien d’obligatoire si le code est déjà à jour.
+
+=== RENDER — service 1 : site Logement Facile (racine du repo) ===
+Environment :
+  SMS_DISPATCH_URL = https://<ton-dispatcher>.onrender.com/dispatch
+  SMS_DISPATCH_TOKEN = <secret>          (exactement = DISPATCH_BEARER_TOKEN du service 2)
+
+OU Twilio direct sur ce service (sans dispatcher) :
+  TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM
+  (ne pas remplir TWILIO_* si tu utilises uniquement SMS_DISPATCH_URL)
+
+=== RENDER — service 2 : nouveau Web Service ===
+Root Directory : sms-dispatcher
+Build Command  : pip install -r requirements.txt
+Start Command  : gunicorn --bind 0.0.0.0:$PORT wsgi:app
+
+Environment :
+  DISPATCH_BEARER_TOKEN = <secret>     (même valeur que SMS_DISPATCH_TOKEN du service 1)
+  + pour vrais SMS : TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM
+  + ou SMS_UPSTREAM_URL (relais)
+  + test sans SMS : SMS_MODE = echo
+
+Routes utiles : GET /health   POST /dispatch (JSON {"to","message"})
