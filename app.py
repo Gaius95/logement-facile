@@ -2,8 +2,10 @@ import base64
 import os
 import re
 import secrets
+import smtplib
 import uuid
 from datetime import datetime, timedelta, timezone
+from email.message import EmailMessage
 
 import requests
 import stripe
@@ -17,6 +19,10 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
 
 load_dotenv()
+
+
+def _env_truthy(name: str) -> bool:
+    return (os.environ.get(name) or "").strip().lower() in ("1", "true", "yes", "on")
 
 
 def is_production() -> bool:
@@ -65,6 +71,28 @@ KYC_MAX_FILE_BYTES = int(os.environ.get("KYC_MAX_FILE_MB", "5")) * 1024 * 1024
 ADMIN_EMAILS = frozenset(
     e.strip().lower() for e in os.environ.get("ADMIN_EMAILS", "").split(",") if e.strip()
 )
+
+# Coordonnées « contact officiel » (page Contact, footer) — surcharge : CONTACT_EMAIL, CONTACT_PHONE sur Render
+CONTACT_EMAIL = (os.environ.get("CONTACT_EMAIL") or "logementfacil110@gmail.com").strip()
+CONTACT_PHONE_RAW = (os.environ.get("CONTACT_PHONE") or "+224613303250").strip()
+CONTACT_PHONE_TEL = re.sub(r"\s", "", CONTACT_PHONE_RAW)  # pour lien tel:
+CONTACT_PHONE_WA = re.sub(r"\D", "", CONTACT_PHONE_TEL)  # pour wa.me (ex. 224613303250)
+CONTACT_PHONE_PRETTY = (
+    os.environ.get("CONTACT_PHONE_PRETTY") or "+224 613 30 32 50"
+).strip()  # affichage lisible
+
+
+@app.context_processor
+def inject_contact_info():
+    return {
+        "contact_email": CONTACT_EMAIL,
+        "contact_phone_pretty": CONTACT_PHONE_PRETTY,
+        "contact_phone_tel": CONTACT_PHONE_TEL,
+        "contact_wa_digits": CONTACT_PHONE_WA,
+        "phone_verify_use_email": _env_truthy("PHONE_VERIFY_USE_EMAIL"),
+        "phone_verify_email_fallback": _env_truthy("PHONE_VERIFY_EMAIL_FALLBACK"),
+    }
+
 
 # Noms de fichiers autorisés pour /conakry-media/ (évite lecture arbitraire)
 _MEDIA_NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,180}$")
@@ -408,7 +436,40 @@ def send_sms_message(phone_number: str, text_msg: str) -> bool:
         return False
 
 
-def start_phone_verification(user: User) -> tuple[bool, str]:
+def send_verification_email(to_addr: str, body: str) -> bool:
+    """
+    Envoie le code par e-mail (SMTP). Variables : MAIL_SERVER, MAIL_PORT, MAIL_USERNAME,
+    MAIL_PASSWORD, MAIL_DEFAULT_SENDER (optionnel, sinon MAIL_USERNAME).
+    """
+    to_addr = (to_addr or "").strip()
+    server = (os.environ.get("MAIL_SERVER") or "").strip()
+    user = (os.environ.get("MAIL_USERNAME") or "").strip()
+    password = (os.environ.get("MAIL_PASSWORD") or "").strip()
+    if not (to_addr and server and user and password):
+        return False
+    port = int(os.environ.get("MAIL_PORT", "587"))
+    sender = (os.environ.get("MAIL_DEFAULT_SENDER") or user).strip()
+    subject = "Logement Facile — code de vérification téléphone"
+    try:
+        msg = EmailMessage()
+        msg["Subject"] = subject
+        msg["From"] = sender
+        msg["To"] = to_addr
+        msg.set_content(body)
+        with smtplib.SMTP(server, port, timeout=25) as smtp:
+            smtp.starttls()
+            smtp.login(user, password)
+            smtp.send_message(msg)
+        return True
+    except Exception:
+        return False
+
+
+def start_phone_verification(user: User) -> tuple[bool, str, str]:
+    """
+    Retourne (succès_envoi, code_en_clair, canal) avec canal dans
+    'sms' | 'email' | 'email_fallback' | 'none'.
+    """
     code = f"{secrets.randbelow(1000000):06d}"
     ttl_minutes = int(os.environ.get("SMS_CODE_TTL_MINUTES", "10"))
     user.phone_verification_code_hash = generate_password_hash(code)
@@ -416,11 +477,27 @@ def start_phone_verification(user: User) -> tuple[bool, str]:
     user.phone_verification_attempts = 0
     db.session.commit()
 
-    sms_ok = send_sms_message(
-        user.phone_number or "",
-        f"Logement Facile - votre code de verification est: {code}. Expire dans {ttl_minutes} min.",
+    text = (
+        f"Logement Facile - votre code de verification est: {code}. "
+        f"Expire dans {ttl_minutes} min."
     )
-    return sms_ok, code
+
+    # 1) Uniquement e-mail (si SMS impossible dans ton pays / fournisseur)
+    if _env_truthy("PHONE_VERIFY_USE_EMAIL"):
+        if user.email and send_verification_email(user.email, text):
+            return True, code, "email"
+        return False, code, "none"
+
+    # 2) SMS d'abord
+    sms_ok = send_sms_message(user.phone_number or "", text)
+    if sms_ok:
+        return True, code, "sms"
+
+    # 3) Secours e-mail si SMS en échec
+    if _env_truthy("PHONE_VERIFY_EMAIL_FALLBACK") and user.email and send_verification_email(user.email, text):
+        return True, code, "email_fallback"
+
+    return False, code, "none"
 
 
 def is_kyc_admin(user: User) -> bool:
@@ -709,15 +786,26 @@ def inscription():
         db.session.add(u)
         db.session.commit()
         login_user(u)
-        sms_ok, debug_code = start_phone_verification(u)
-        if sms_ok:
-            flash("Inscription réussie. Un code SMS a été envoyé à votre numéro.", "info")
+        ok_send, debug_code, channel = start_phone_verification(u)
+        if ok_send:
+            if channel == "sms":
+                flash("Inscription réussie. Un code SMS a été envoyé à votre numéro.", "info")
+            elif channel in ("email", "email_fallback"):
+                flash(
+                    "Inscription réussie. Un code vous a été envoyé par e-mail (vérifiez aussi les courriers indésirables).",
+                    "info",
+                )
+            else:
+                flash("Inscription réussie. Consultez le message avec votre code.", "info")
         else:
             if is_production():
-                flash("Inscription réussie. Envoi SMS indisponible, réessayez dans un instant.", "error")
+                flash(
+                    "Inscription réussie. Envoi du code indisponible (SMS / e-mail). Réessayez ou configurez MAIL_* sur Render.",
+                    "error",
+                )
             else:
                 flash(
-                    f"Inscription réussie. Mode test: votre code SMS est {debug_code} (à configurer en prod).",
+                    f"Inscription réussie. Mode test: votre code est {debug_code} (configurez SMS ou e-mail en prod).",
                     "info",
                 )
         return redirect(safe_next_url() or url_for("verifier_telephone"))
@@ -782,14 +870,19 @@ def renvoyer_code_telephone():
         flash("Téléphone déjà vérifié.", "info")
         return redirect(url_for("verifier_identite"))
 
-    sms_ok, debug_code = start_phone_verification(user)
-    if sms_ok:
-        flash("Nouveau code SMS envoyé.", "info")
+    ok_send, debug_code, channel = start_phone_verification(user)
+    if ok_send:
+        if channel == "sms":
+            flash("Nouveau code SMS envoyé.", "info")
+        elif channel in ("email", "email_fallback"):
+            flash("Nouveau code envoyé par e-mail (vérifiez aussi les spams).", "info")
+        else:
+            flash("Nouveau code envoyé.", "info")
     else:
         if is_production():
-            flash("Envoi SMS indisponible. Vérifiez la configuration SMS.", "error")
+            flash("Envoi du code indisponible. Vérifiez SMS / webhook ou configuration e-mail (MAIL_*).", "error")
         else:
-            flash(f"Mode test: nouveau code SMS = {debug_code}", "info")
+            flash(f"Mode test: nouveau code = {debug_code}", "info")
     return redirect(url_for("verifier_telephone"))
 
 
