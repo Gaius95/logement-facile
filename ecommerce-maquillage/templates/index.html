@@ -2,15 +2,29 @@
 {% block title %}Accueil — {{ app_name }}{% endblock %}
 
 {% block content %}
-  <section class="panel video-wrap" style="margin-top:22px;">
-    <h2 style="margin:0 0 10px; font-size:1.3rem;">Regardez la vidéo avant de commander</h2>
-    <div class="help" style="margin:0 0 12px;">
-      Suivez le lien et réservez votre produit pendant l’offre spéciale.
+  <div class="sticky-cta" role="region" aria-label="Action rapide">
+    <div class="sticky-cta-inner">
+      <a class="btn btn-primary sticky-btn" href="{{ url_for('catalogue') }}">Voir les produits</a>
+      <a class="btn btn-ghost sticky-btn" href="{{ url_for('cart') }}">Panier{% if cart_items_count %} ({{ cart_items_count }}){% endif %}</a>
     </div>
+  </div>
+
+  <section class="panel video-wrap" style="margin-top:22px;">
+    <h2 style="margin:0 0 10px; font-size:1.3rem;">Démo rapide</h2>
+    <div class="help" style="margin:0 0 12px;">La vidéo démarre automatiquement. Paiement à la réception.</div>
 
     {% if hero_video_local_url %}
       <div class="video-frame" aria-label="Vidéo de présentation">
-        <video controls autoplay muted loop playsinline preload="metadata" poster="{{ url_for('media', filename=products[0].main_image) }}">
+        <video
+          class="hero-video"
+          autoplay
+          muted
+          loop
+          playsinline
+          preload="auto"
+          poster="{{ url_for('media', filename=products[0].main_image) }}"
+          data-autoplay-video
+        >
           <source src="{{ hero_video_local_url }}" type="video/mp4">
           Votre navigateur ne supporte pas la vidéo.
         </video>
@@ -33,10 +47,6 @@
     {% endif %}
 
     <div class="help" style="margin-top:12px;">{{ hero_video_subtitle }}</div>
-    <div class="hero-actions" style="margin-top:14px;">
-      <a class="btn btn-primary" href="{{ url_for('catalogue') }}">Accéder au catalogue</a>
-      <a class="btn btn-ghost" href="{{ url_for('cart') }}">Voir le panier</a>
-    </div>
   </section>
 
   <section class="hero">

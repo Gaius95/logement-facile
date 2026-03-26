@@ -67,5 +67,19 @@ document.addEventListener('DOMContentLoaded', () => {
   startCountdown();
   setupThumbs();
   setupCheckoutZone();
+
+  // Autoplay vidéo: certains mobiles exigent un play() programmatique
+  const v = document.querySelector('[data-autoplay-video]');
+  if (v && v instanceof HTMLVideoElement) {
+    try {
+      v.muted = true;
+      const p = v.play();
+      if (p && typeof p.catch === 'function') {
+        p.catch(() => {
+          // Si le navigateur bloque, on laisse le poster (pas d'erreur visible).
+        });
+      }
+    } catch (_) {}
+  }
 });
 

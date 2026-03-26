@@ -278,6 +278,41 @@ body{
   background: #000;
 }
 
+.hero-video{
+  width: 100%;
+  height: min(62vh, 520px);
+  object-fit: cover;
+}
+
+.sticky-cta{
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+  padding: 12px 0 calc(12px + env(safe-area-inset-bottom));
+  background: rgba(11,16,32,0.66);
+  border-top: 1px solid rgba(255,255,255,0.12);
+  backdrop-filter: blur(14px);
+}
+.sticky-cta-inner{
+  width: min(1140px, 92vw);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.sticky-btn{
+  width: 100%;
+  padding: 14px 14px;
+  border-radius: 16px;
+}
+
+/* évite que le bouton cache le contenu en bas */
+body{
+  padding-bottom: 92px;
+}
+
 .product-actions{
   display:flex;
   gap: 10px;
