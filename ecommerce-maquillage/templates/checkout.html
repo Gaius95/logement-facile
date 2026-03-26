@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% block title %}Checkout — {{ app_name }}{% endblock %}
+
+{% block content %}
+  <h1 style="font-family:'Playfair Display',serif; margin:18px 0 6px;">Finaliser la commande</h1>
+  <p style="color:var(--muted); margin:0 0 18px; font-weight:650;">
+    Paiement à la réception : cash ou Mobile Money. Livraison Conakry gratuite.
+  </p>
+
+  <div class="page-grid-2">
+    <section class="panel">
+      <h2>Vos infos</h2>
+      <form method="POST" action="{{ url_for('checkout') }}">
+        {{ form.hidden_tag() }}
+
+        <div class="form-row">
+          <div class="field">
+            {{ form.nom_prenom.label }}
+            {{ form.nom_prenom(type="text", placeholder="Ex: Mariama Diallo") }}
+            {% for e in form.nom_prenom.errors %}
+              <div class="error">{{ e }}</div>
+            {% endfor %}
+          </div>
+          <div class="field">
+            {{ form.telephone.label }}
+            {{ form.telephone(type="tel", placeholder="Ex: +2246...") }}
+            {% for e in form.telephone.errors %}
+              <div class="error">{{ e }}</div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div style="margin-top:14px;">
+          <h3 style="margin:0 0 10px;">Livraison</h3>
+          <div class="radio-row">
+            {% for subfield in form.zone_livraison %}
+              <label class="radio-option">
+                {{ subfield }}
+                <span>{{ subfield.label.text }}</span>
+              </label>
+            {% endfor %}
+          </div>
+          {% for e in form.zone_livraison.errors %}
+            <div class="error">{{ e }}</div>
+          {% endfor %}
+          <div class="help">
+            Conakry : gratuit. Hors Conakry : {{ shipping_outside_note }}
+          </div>
+        </div>
+
+        <div id="adresseWrap" style="margin-top:12px; {% if form.zone_livraison.data != 'outside' %}display:none;{% endif %}">
+          <div class="field">
+            {{ form.adresse_hors_conakry.label }}
+            {{ form.adresse_hors_conakry(placeholder="Quartier/Commune, point de repère...") }}
+            {% for e in form.adresse_hors_conakry.errors %}
+              <div class="error">{{ e }}</div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div style="margin-top:16px;">
+          <h3 style="margin:0 0 10px;">Moyen de paiement</h3>
+          <div class="radio-row">
+            {% for subfield in form.payment_method %}
+              <label class="radio-option">
+                {{ subfield }}
+                <span>{{ subfield.label.text }}</span>
+              </label>
+            {% endfor %}
+          </div>
+          {% for e in form.payment_method.errors %}
+            <div class="error">{{ e }}</div>
+          {% endfor %}
+        </div>
+
+        <button class="btn btn-primary" type="submit" style="width:100%; margin-top:16px;">
+          Confirmer la commande
+        </button>
+      </form>
+    </section>
+
+    <aside class="panel">
+      <h2>Récapitulatif</h2>
+      {% if cart_items %}
+        <div class="cart-list">
+          {% for it in cart_items %}
+            <div class="cart-item" style="grid-template-columns:86px 1fr; grid-template-rows:auto auto;">
+              <img src="{{ url_for('media', filename=it.product.main_image) }}" alt="{{ it.product.name }}" loading="lazy">
+              <div>
+                <h3 style="margin-bottom:6px;">{{ it.product.name }}</h3>
+                <div class="meta">Quantité : <b style="color:var(--text)">{{ it.qty }}</b></div>
+                <div class="meta" style="margin-top:6px;">Ligne : <b style="color:var(--text)">{{ format_gnf(it.line_total_gnf) }}</b></div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <div class="total-line">
+        <span>Sous-total</span>
+        <strong>{{ format_gnf(cart_subtotal_gnf) }}</strong>
+      </div>
+
+      {% if bundle_info and bundle_info.bundles > 0 %}
+        <div style="margin-top:12px; padding:14px; border:1px solid rgba(255,77,109,0.35); background: rgba(255,77,109,0.10); border-radius: var(--radius);">
+          <div style="font-weight:1000; margin-bottom:6px;">{{ bundle_info.bundles }} pack(s) — prix promo</div>
+          <div style="color:rgba(255,255,255,0.92); font-weight:800;">
+            Avant : {{ format_gnf(bundle_info.bundle_original_total_gnf) }}<br/>
+            Maintenant : {{ format_gnf(bundle_info.bundle_special_total_gnf) }}<br/>
+            Économie : {{ format_gnf(bundle_info.discount_amount_gnf) }}
+          </div>
+        </div>
+      {% endif %}
+      <div class="help" style="margin-top:10px;">
+        Livraison à Conakry : gratuite.
+        <br/>Hors Conakry : {{ shipping_outside_note }}
+      </div>
+
+      <div style="margin-top:14px; padding:14px; border:1px dashed var(--border); border-radius: var(--radius); color:var(--muted); font-weight:700;">
+        <div style="font-weight:900; color:var(--text); margin-bottom:6px;">Confiance</div>
+        <div>Votre commande est enregistrée. Nous vous appelons pour confirmer.</div>
+      </div>
+    </aside>
+  </div>
+
+  {% if fb_pixel_id %}
+    <script>
+      fbq('track','InitiateCheckout');
+    </script>
+  {% endif %}
+{% endblock %}
+

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}{{ app_name }}{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+
+    {% if fb_pixel_id %}
+      <!-- Facebook Pixel -->
+      <script>
+        !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+        n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+        n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+        t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window, document,'script',
+        'https://connect.facebook.net/en_US/fbevents.js');
+        fbq('init','{{ fb_pixel_id }}');
+        fbq('track','PageView');
+      </script>
+      <noscript>
+        <img height="1" width="1" style="display:none"
+             src="https://www.facebook.com/tr?id={{ fb_pixel_id }}&ev=PageView&noscript=1"/>
+      </noscript>
+    {% endif %}
+</head>
+<body>
+    <header class="site-header">
+        <div class="container header-inner">
+            <a class="brand" href="{{ url_for('index') }}">
+                <span class="brand-mark"></span>
+                <span>{{ app_name }}</span>
+            </a>
+            <nav class="nav">
+                <a class="nav-link" href="{{ url_for('catalogue') }}">Produits</a>
+                <a class="nav-link" href="{{ url_for('cart') }}">Panier</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="trust-bar">
+        <div class="container trust-grid">
+            <div class="trust-item">
+                <div class="trust-title">Paiement à la réception</div>
+                <div class="trust-sub">Cash ou Mobile Money</div>
+            </div>
+            <div class="trust-item">
+                <div class="trust-title">Livraison</div>
+                <div class="trust-sub">Conakry gratuite</div>
+            </div>
+            <div class="trust-item">
+                <div class="trust-title">Offre limitée</div>
+                <div class="trust-sub" id="countdownWrap">
+                    {% if offer_expires_at_iso %}
+                      <span id="countdown" data-expires-at="{{ offer_expires_at_iso }}" data-offer-minutes="{{ offer_minutes }}"></span>
+                    {% else %}
+                      <span>Offre en cours</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <main class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="flash-stack">
+              {% for category, message in messages %}
+                <div class="flash flash-{{ category }}">{{ message }}</div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <section class="container testimonials">
+        <h2 class="section-title">Ce que nos clientes disent</h2>
+        <div class="testi-grid">
+            {% for t in testimonials %}
+                <article class="testi-card">
+                    <div class="testi-head">
+                        <div class="avatar" aria-hidden="true">★</div>
+                        <div>
+                            <div class="testi-name">{{ t.name }}</div>
+                            <div class="testi-city">{{ t.city }}</div>
+                        </div>
+                    </div>
+                    <p class="testi-text">{{ t.text }}</p>
+                </article>
+            {% endfor %}
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container footer-inner">
+            <div class="footer-brand">
+                <div class="footer-title">{{ app_name }}</div>
+                <div class="footer-sub">Commande par téléphone / message WhatsApp</div>
+            </div>
+            <div class="footer-links">
+                <a href="{{ url_for('catalogue') }}">Catalogue</a>
+                <a href="{{ url_for('cart') }}">Panier</a>
+                <a href="{{ url_for('checkout') }}">Checkout</a>
+            </div>
+        </div>
+        <div class="container footer-copy">© 2026 — Tous droits réservés.</div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
+

@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Panier — {{ app_name }}{% endblock %}
+
+{% block content %}
+  <h1 style="font-family:'Playfair Display',serif; margin:18px 0 10px;">Votre panier</h1>
+
+  <div class="page-grid-2" style="margin-top: 10px;">
+    <section class="panel">
+      {% if cart_items %}
+        <div class="cart-list">
+          {% for it in cart_items %}
+            <div class="cart-item">
+              <img src="{{ url_for('media', filename=it.product.main_image) }}" alt="{{ it.product.name }}" loading="lazy">
+              <div>
+                <h3>{{ it.product.name }}</h3>
+                <div class="meta">Prix: {{ format_gnf(it.product.price_gnf) }}</div>
+                <div class="meta" style="margin-top:6px;">Total ligne: <b style="color:var(--text)">{{ format_gnf(it.line_total_gnf) }}</b></div>
+              </div>
+              <div>
+                <div class="qty">
+                  <form method="POST" action="{{ url_for('cart_update') }}" style="display:flex; gap:10px; align-items:center;">
+                    {{ csrf_token() }}
+                    <input type="hidden" name="product_id" value="{{ it.product.id }}">
+                    <input type="number" name="qty" value="{{ it.qty }}" min="1" max="10">
+                    <button class="btn btn-ghost" type="submit" style="padding:10px 12px; border-radius:14px;">OK</button>
+                  </form>
+                </div>
+                <form method="POST" action="{{ url_for('cart_remove', product_id=it.product.id) }}" style="margin-top:10px;">
+                  {{ csrf_token() }}
+                  <button class="btn btn-ghost" type="submit" style="padding:10px 12px; border-radius:14px; width:100%;">Retirer</button>
+                </form>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="help" style="margin-top:14px;">
+          Votre panier est vide. Choisissez un produit pour commencer.
+        </div>
+        <a class="btn btn-primary" href="{{ url_for('catalogue') }}" style="margin-top:14px;">Voir les produits</a>
+      {% endif %}
+    </section>
+
+    <aside class="panel">
+      <h2>Total</h2>
+      <div class="total-line">
+        <span>Sous-total</span>
+        <strong>{{ format_gnf(cart_subtotal_gnf) }}</strong>
+      </div>
+
+      {% if bundle_info and bundle_info.bundles > 0 %}
+        <div style="margin-top:12px; padding:14px; border:1px solid rgba(255,77,109,0.35); background: rgba(255,77,109,0.10); border-radius: var(--radius);">
+          <div style="font-weight:1000; margin-bottom:6px;">{{ bundle_info.bundles }} pack(s) — prix promo</div>
+          <div style="color:rgba(255,255,255,0.92); font-weight:800;">
+            Avant : {{ format_gnf(bundle_info.bundle_original_total_gnf) }}<br/>
+            Maintenant : {{ format_gnf(bundle_info.bundle_special_total_gnf) }}<br/>
+            Économie : {{ format_gnf(bundle_info.discount_amount_gnf) }}
+          </div>
+        </div>
+      {% endif %}
+
+      <div class="help" style="margin-top:12px;">
+        La livraison est gratuite à Conakry.
+        <br/>Hors Conakry : coût à confirmer pendant le checkout.
+      </div>
+
+      <a class="btn btn-primary" href="{{ url_for('checkout') }}" style="width:100%; margin-top:16px; {% if not cart_items %}opacity:0.55; pointer-events:none;{% endif %}">
+        Finaliser la commande
+      </a>
+    </aside>
+  </div>
+{% endblock %}
+

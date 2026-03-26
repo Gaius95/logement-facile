@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}Accueil — {{ app_name }}{% endblock %}
+
+{% block content %}
+  <section class="panel video-wrap" style="margin-top:22px;">
+    <h2 style="margin:0 0 10px; font-size:1.3rem;">Regardez la vidéo avant de commander</h2>
+    <div class="help" style="margin:0 0 12px;">
+      Suivez le lien et réservez votre produit pendant l’offre spéciale.
+    </div>
+
+    {% if hero_video_local_url %}
+      <div class="video-frame" aria-label="Vidéo de présentation">
+        <video controls autoplay muted loop playsinline preload="metadata" poster="{{ url_for('media', filename=products[0].main_image) }}">
+          <source src="{{ hero_video_local_url }}" type="video/mp4">
+          Votre navigateur ne supporte pas la vidéo.
+        </video>
+      </div>
+    {% elif hero_video_embed_url %}
+      <div class="video-frame" aria-label="Vidéo de présentation">
+        <iframe
+          src="{{ hero_video_embed_url }}"
+          title="{{ hero_video_title }}"
+          frameborder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowfullscreen
+          loading="lazy"
+        ></iframe>
+      </div>
+    {% else %}
+      <div class="help" style="padding:14px; border:1px dashed var(--border); border-radius: var(--radius);">
+        Ajoute l’URL embed de ta vidéo dans `HERO_VIDEO_EMBED_URL`.
+      </div>
+    {% endif %}
+
+    <div class="help" style="margin-top:12px;">{{ hero_video_subtitle }}</div>
+    <div class="hero-actions" style="margin-top:14px;">
+      <a class="btn btn-primary" href="{{ url_for('catalogue') }}">Accéder au catalogue</a>
+      <a class="btn btn-ghost" href="{{ url_for('cart') }}">Voir le panier</a>
+    </div>
+  </section>
+
+  <section class="hero">
+    <div>
+      <h1>Un look pro dès maintenant.</h1>
+      <p>Crayon 4-en-1 + Fond de teint : commandez, payez à la réception, livraison gratuite à Conakry. Prix spécial pendant le compte à rebours.</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="{{ url_for('catalogue') }}">Voir les produits</a>
+        <a class="btn btn-ghost" href="{{ url_for('cart') }}">
+          Panier {% if cart_items_count %}({{ cart_items_count }}){% endif %}
+        </a>
+      </div>
+
+      <ul class="list">
+        <li>Paiement cash ou Mobile Money à la livraison</li>
+        <li>Offre limitée (compte à rebours)</li>
+        <li>Plusieurs teintes / styles selon votre produit</li>
+      </ul>
+    </div>
+
+    <div class="img-hero">
+      <img
+        src="{{ url_for('media', filename=products[0].main_image) }}"
+        alt="Produit maquillage"
+        loading="lazy"
+      />
+    </div>
+  </section>
+
+  <h2 class="section-title">Produits phares</h2>
+  <div class="product-grid">
+    {% for p in products[:6] %}
+      <article class="card">
+        <div class="card-media">
+          <img src="{{ url_for('media', filename=p.main_image) }}" alt="{{ p.name }}" loading="lazy">
+        </div>
+        <div class="card-body">
+          <h3 class="card-title">{{ p.name }}</h3>
+          <div class="card-sub">{{ p.subtitle }}</div>
+          <div style="margin-bottom:12px;">
+            {% if p.original_price_gnf %}
+              <div class="price-discount">
+                <span class="badge">{{ p.offer_label or 'Offre spéciale' }}</span>
+                <span class="price-now">{{ format_gnf(p.price_gnf) }}</span>
+                <span class="price-was">Avant : {{ format_gnf(p.original_price_gnf) }}</span>
+              </div>
+            {% else %}
+              <div class="price">{{ format_gnf(p.price_gnf) }}</div>
+            {% endif %}
+          </div>
+          <div class="product-actions">
+            <a class="btn btn-primary" href="{{ url_for('product', slug=p.slug) }}">Voir</a>
+            <form method="POST" action="{{ url_for('cart_add', product_id=p.id) }}" style="margin:0;">
+              {{ csrf_token() }}
+              <input type="hidden" name="qty" value="1" />
+              <button class="btn btn-ghost" type="submit">Ajouter</button>
+            </form>
+          </div>
+        </div>
+      </article>
+    {% endfor %}
+  </div>
+
+  <h2 class="section-title">Pourquoi commander maintenant ?</h2>
+  <div class="page-grid-2">
+    <div class="panel">
+      <h2>Simple et rapide</h2>
+      <ul class="list">
+        <li>Choisissez le produit</li>
+        <li>Remplissez vos infos (nom + numéro)</li>
+        <li>Payez à la réception (Cash ou Mobile Money)</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h2>Livraison & confiance</h2>
+      <ul class="list">
+        <li>Conakry : livraison gratuite</li>
+        <li>Hors Conakry : à la charge du client</li>
+        <li>Témoignages clients + offre limitée</li>
+      </ul>
+    </div>
+  </div>
+{% endblock %}
+

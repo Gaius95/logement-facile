@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}Merci — {{ app_name }}{% endblock %}
+
+{% block content %}
+  <section class="hero" style="margin-top:22px;">
+    <div>
+      <h1 style="margin-bottom:8px;">Merci, votre commande est bien enregistrée.</h1>
+      <p>
+        Paiement à la réception : <b>cash</b> ou <b>Mobile Money</b>.
+        <br/>Nous vous contactons rapidement au numéro indiqué.
+      </p>
+
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="{{ url_for('catalogue') }}">Continuer les achats</a>
+        <a class="btn btn-ghost" href="tel:{{ contact_phone }}">Appeler l’équipe</a>
+      </div>
+
+      <div style="margin-top:16px; color:var(--muted); font-weight:700;">
+        Offre réservée : compte à rebours actif.
+      </div>
+    </div>
+    <div class="panel" style="margin:0;">
+      <h2 style="margin:0 0 10px;">Votre récap</h2>
+      <div style="color:var(--muted); font-weight:750; margin-bottom: 10px;">
+        Client : {{ order.nom_prenom }} — {{ order.telephone }}
+      </div>
+      <div style="color:rgba(255,255,255,0.88); font-weight:750;">
+        Zone : {{ 'Conakry (gratuite)' if order.zone_livraison == 'conakry' else 'Hors Conakry' }}
+        <br/>
+        Paiement : {{ 'Cash' if order.payment_method == 'cash' else 'Mobile Money' }}
+      </div>
+      {% if bundle_info and bundle_info.bundles > 0 %}
+        <div style="margin-top:12px; padding:14px; border:1px solid rgba(255,77,109,0.35); background: rgba(255,77,109,0.10); border-radius: var(--radius);">
+          <div style="font-weight:1000; margin-bottom:6px;">Pack promo (2 pièces)</div>
+          <div style="color:rgba(255,255,255,0.92); font-weight:800;">
+            Avant : {{ format_gnf(bundle_info.bundle_original_total_gnf) }}<br/>
+            Maintenant : {{ format_gnf(bundle_info.bundle_special_total_gnf) }}<br/>
+            Économie : {{ format_gnf(bundle_info.discount_amount_gnf) }}
+          </div>
+        </div>
+      {% endif %}
+      <div style="margin-top:12px; padding-top:12px; border-top:1px solid var(--border);">
+        <div class="total-line">
+          <span>Total</span>
+          <strong>{{ format_gnf(order.grand_total_gnf) }}</strong>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="page-grid-2" style="margin-top:16px;">
+    <div class="panel">
+      <h2>Articles</h2>
+      <div class="cart-list">
+        {% for it in items %}
+          <div class="cart-item" style="grid-template-columns:86px 1fr; grid-template-rows:auto auto;">
+            <img src="{{ url_for('media', filename=it.product.main_image) }}" alt="{{ it.product.name }}" loading="lazy">
+            <div>
+              <h3 style="margin:0 0 6px;">{{ it.product.name }}</h3>
+              <div class="meta">Quantité : <b style="color:var(--text)">{{ it.qty }}</b></div>
+              <div class="meta" style="margin-top:6px;">
+                Ligne : <b style="color:var(--text)">{{ format_gnf(it.line_total_gnf) }}</b>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+
+      {% if bundle_info and bundle_info.bundles > 0 %}
+        <div style="margin-top:12px; padding:12px; border-radius: var(--radius); border:1px dashed rgba(255,77,109,0.35); color:rgba(255,255,255,0.86); font-weight:800;">
+          Remise pack : -{{ format_gnf(bundle_info.discount_amount_gnf) }}
+        </div>
+      {% endif %}
+    </div>
+
+    <aside class="panel">
+      <h2>Prochaine étape</h2>
+      <ul class="list">
+        <li>On vous appelle / on vous écrit pour confirmer votre commande.</li>
+        <li>Vous payez à la réception (cash ou Mobile Money).</li>
+        <li>Livraison : gratuite à Conakry, hors Conakry à votre charge.</li>
+      </ul>
+
+      <div style="margin-top:14px; padding:14px; border:1px dashed var(--border); border-radius: var(--radius); color:var(--muted); font-weight:750;">
+        <div style="font-weight:900; color:var(--text); margin-bottom:6px;">Compte à rebours</div>
+        <div id="orderCountdown" data-expires-at="{{ offer_expires_at_iso }}"></div>
+      </div>
+    </aside>
+  </section>
+
+  {% if fb_pixel_id %}
+    <script>
+      fbq('track','{{ fb_pixel_event }}', { value: {{ order.grand_total_gnf }}, currency: 'GNF' });
+    </script>
+  {% endif %}
+{% endblock %}
+

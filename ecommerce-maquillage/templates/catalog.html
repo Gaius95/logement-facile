@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Catalogue — {{ app_name }}{% endblock %}
+
+{% block content %}
+  <h1 style="font-family:'Playfair Display',serif; margin:18px 0 8px;">Catalogue</h1>
+  <p style="color:var(--muted); margin:0 0 18px; font-weight:650;">
+    Cliquez sur un produit pour voir les détails, puis ajoutez au panier.
+  </p>
+
+  <div class="product-grid">
+    {% for p in products %}
+      <article class="card">
+        <div class="card-media">
+          <img src="{{ url_for('media', filename=p.main_image) }}" alt="{{ p.name }}" loading="lazy">
+        </div>
+        <div class="card-body">
+          <h3 class="card-title">{{ p.name }}</h3>
+          <div class="card-sub">{{ p.subtitle }}</div>
+          <div style="margin-bottom:12px;">
+            {% if p.original_price_gnf %}
+              <div class="price-discount">
+                <span class="badge">{{ p.offer_label or 'Offre spéciale' }}</span>
+                <span class="price-now">{{ format_gnf(p.price_gnf) }}</span>
+                <span class="price-was">Avant : {{ format_gnf(p.original_price_gnf) }}</span>
+              </div>
+            {% else %}
+              <div class="price">{{ format_gnf(p.price_gnf) }}</div>
+            {% endif %}
+          </div>
+          <div class="product-actions">
+            <a class="btn btn-primary" href="{{ url_for('product', slug=p.slug) }}">Voir détails</a>
+            <form method="POST" action="{{ url_for('cart_add', product_id=p.id) }}" style="margin:0;">
+              {{ csrf_token() }}
+              <input type="hidden" name="qty" value="1" />
+              <button class="btn btn-ghost" type="submit">Ajouter</button>
+            </form>
+          </div>
+        </div>
+      </article>
+    {% endfor %}
+  </div>
+{% endblock %}
+

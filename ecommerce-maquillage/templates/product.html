@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}{{ product.name }} — {{ app_name }}{% endblock %}
+
+{% block content %}
+  <div class="page-grid-2" style="margin-top: 22px;">
+    <section class="panel">
+      <h2 style="margin-bottom: 6px;">{{ product.name }}</h2>
+      <div style="color:var(--muted); font-weight:700; margin-bottom: 14px;">{{ product.subtitle }}</div>
+
+      <div class="img-hero">
+        <img
+          data-main-image
+          src="{{ url_for('media', filename=product.main_image) }}"
+          alt="{{ product.name }}"
+        />
+      </div>
+
+      <div class="thumbs">
+        {% for img in product.gallery %}
+          <div class="thumb" data-thumb data-src="{{ url_for('media', filename=img) }}">
+            <img src="{{ url_for('media', filename=img) }}" alt="Aperçu" loading="lazy">
+          </div>
+        {% endfor %}
+      </div>
+
+      <h3 style="margin: 16px 0 10px;">Points forts</h3>
+      <ul class="list">
+        {% for h in product.highlights %}
+          <li>{{ h }}</li>
+        {% endfor %}
+      </ul>
+
+      <h3 style="margin: 16px 0 10px;">Détails</h3>
+      <p style="margin:0; color:rgba(255,255,255,0.78); font-weight:650; line-height:1.6;">
+        {{ product.details }}
+      </p>
+    </section>
+
+    <aside class="panel">
+      <h2>Commander</h2>
+
+      <div style="margin-bottom:10px;">
+        {% if product.original_price_gnf %}
+          <div class="price-discount">
+            <span class="badge">{{ product.offer_label or 'Offre spéciale' }}</span>
+            <span class="price-now" style="font-size:1.5rem;">{{ format_gnf(product.price_gnf) }}</span>
+            <span class="price-was">Avant : {{ format_gnf(product.original_price_gnf) }}</span>
+          </div>
+        {% else %}
+          <div class="price" style="font-size:1.5rem;">{{ format_gnf(product.price_gnf) }}</div>
+        {% endif %}
+      </div>
+
+      <div class="help">
+        Paiement à la réception : <b>Cash</b> ou <b>Mobile Money</b>.
+        <br/>Livraison : <b>gratuite à Conakry</b>.
+        <br/>Hors Conakry : livraison à votre charge.
+      </div>
+
+      <hr style="border:0; border-top:1px solid var(--border); margin: 16px 0;" />
+
+      <form method="POST" action="{{ url_for('cart_add', product_id=product.id) }}">
+        {{ csrf_token() }}
+        <div class="field" style="margin-bottom: 12px;">
+          <label>Quantité</label>
+          <input type="number" name="qty" value="1" min="1" max="10" />
+        </div>
+        <button class="btn btn-primary" type="submit" style="width:100%;">Ajouter au panier</button>
+      </form>
+
+      <a class="btn btn-ghost" href="{{ url_for('cart') }}" style="width:100%; margin-top: 12px;">
+        Aller au panier
+      </a>
+
+      <div style="margin-top: 16px; padding: 14px; border:1px dashed var(--border); border-radius: var(--radius); color:var(--muted); font-weight:700;">
+        <div style="font-weight:900; color:var(--text); margin-bottom:6px;">Offre limitée</div>
+        <div>Le compte à rebours est actif sur la page. Réservez maintenant.</div>
+      </div>
+    </aside>
+  </div>
+{% endblock %}
+
