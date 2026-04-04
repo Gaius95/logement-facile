@@ -28,6 +28,21 @@ body{
   margin: 0 auto;
 }
 
+.promo-banner{
+  background: linear-gradient(90deg, rgba(225,29,72,0.35), rgba(255,77,109,0.25), rgba(225,29,72,0.35));
+  border-bottom: 1px solid rgba(225,29,72,0.45);
+}
+.promo-banner-inner{
+  padding: 10px 0;
+  text-align: center;
+}
+.promo-banner-text{
+  font-weight: 850;
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+  color: rgba(255,255,255,0.96);
+}
+
 .site-header{
   position: sticky;
   top: 0;
@@ -247,9 +262,11 @@ body{
   color: rgba(255,255,255,0.98);
 }
 .price-was{
-  color: rgba(255,255,255,0.62);
+  color: #f87171;
   font-weight: 800;
   text-decoration: line-through;
+  text-decoration-color: #ef4444;
+  text-decoration-thickness: 2px;
   font-size: 0.95rem;
 }
 
@@ -548,6 +565,320 @@ input::placeholder{ color: rgba(255,255,255,0.45); font-weight: 650; }
   font-size: 1.15rem;
 }
 
+/* ——— Tunnel type landing (Cellestia-inspired) ——— */
+.section-kicker{
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255,183,3,0.95);
+  margin: 0 0 8px;
+}
+.funnel-h2{
+  font-family: "Playfair Display", serif;
+  margin: 0 0 10px;
+  font-size: 1.45rem;
+}
+.funnel-section .funnel-h2{ margin-top: 0; }
+
+.hero-lead{
+  color: rgba(255,255,255,0.82);
+  font-weight: 650;
+  line-height: 1.55;
+  margin: 0 0 16px;
+  font-size: 1.05rem;
+}
+.price-hint{ color: rgba(248,113,113,0.95); font-weight: 700; }
+.list-check li{ list-style: none; margin-left: 0; padding-left: 0; position: relative; padding-left: 22px; }
+.list-check li::before{
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: rgba(34,197,94,0.95);
+  font-weight: 900;
+}
+
+.funnel-advantages{
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0,1fr));
+  gap: 12px;
+  margin: 28px 0;
+}
+.adv-card{
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.04);
+  box-shadow: var(--shadow);
+}
+.adv-ic{
+  font-size: 1.6rem;
+  line-height: 1;
+}
+.adv-title{ margin: 0 0 6px; font-size: 1.05rem; font-weight: 900; }
+.adv-text{ margin: 0; color: var(--muted); font-weight: 650; font-size: 0.95rem; line-height: 1.45; }
+
+.duo-pack-banner{
+  margin: 28px 0 8px;
+  border-radius: var(--radius);
+  border: 1px solid rgba(255,77,109,0.45);
+  background: linear-gradient(135deg, rgba(255,77,109,0.18), rgba(255,183,3,0.08));
+  box-shadow: var(--shadow);
+  padding: 20px;
+}
+.duo-pack-inner{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.duo-pack-kicker{
+  font-weight: 900;
+  font-size: 0.85rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.9);
+  margin-bottom: 8px;
+}
+.duo-pack-prices{
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.duo-pack-now{ font-size: 1.75rem !important; }
+.duo-pack-was{ font-size: 1.05rem !important; }
+.duo-pack-note{
+  margin: 10px 0 0;
+  color: rgba(255,255,255,0.78);
+  font-weight: 650;
+  font-size: 0.95rem;
+  max-width: 520px;
+}
+
+.card--lift{
+  transition: transform .15s ease, box-shadow .2s ease;
+}
+.card--lift:hover{
+  transform: translateY(-3px);
+  box-shadow: 0 22px 50px rgba(0,0,0,0.45);
+}
+
+.panel--soft{
+  background: rgba(255,255,255,0.045);
+}
+.list-steps{
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  counter-reset: step;
+}
+.list-steps li{
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 14px 0;
+  font-weight: 650;
+  color: rgba(255,255,255,0.88);
+  line-height: 1.45;
+}
+.step-num{
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--brand), var(--brand-2));
+  color: rgba(15,23,42,0.95);
+  font-weight: 900;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.catalog-head{ margin: 18px 0 22px; }
+.catalog-title{
+  font-family: "Playfair Display", serif;
+  font-size: clamp(1.6rem, 3vw, 2rem);
+  margin: 0 0 12px;
+}
+.catalog-lead{
+  color: rgba(255,255,255,0.78);
+  font-weight: 650;
+  line-height: 1.6;
+  margin: 0;
+  max-width: 720px;
+}
+.catalog-inline-price{
+  font-weight: 900;
+  color: rgba(255,255,255,0.98);
+  margin: 0 6px;
+}
+.catalog-inline-was{
+  font-size: 0.95rem;
+  margin-left: 4px;
+}
+
+/* Fiche produit tunnel */
+.product-funnel{ align-items: start; }
+.product-title{
+  font-family: "Playfair Display", serif;
+  font-size: clamp(1.5rem, 2.8vw, 2rem);
+  margin: 0 0 8px;
+  line-height: 1.2;
+}
+.product-lead{
+  color: var(--muted);
+  font-weight: 700;
+  margin: 0 0 18px;
+  font-size: 1.02rem;
+  line-height: 1.45;
+}
+.product-h2{
+  font-family: "Playfair Display", serif;
+  font-size: 1.2rem;
+  margin: 22px 0 10px;
+}
+.product-details{
+  margin: 0;
+  color: rgba(255,255,255,0.78);
+  font-weight: 650;
+  line-height: 1.65;
+  white-space: pre-wrap;
+}
+.product-hero-img{ margin-top: 4px; }
+
+.funnel-price-hero{
+  padding: 16px;
+  border-radius: var(--radius-sm);
+  background: rgba(0,0,0,0.22);
+  border: 1px solid rgba(255,255,255,0.1);
+  margin-bottom: 16px;
+}
+.funnel-price-row{
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+.funnel-price-now{
+  font-size: clamp(1.75rem, 4vw, 2.25rem);
+  font-weight: 900;
+  color: rgba(255,255,255,0.98);
+  letter-spacing: -0.02em;
+}
+.funnel-pct{
+  font-weight: 900;
+  font-size: 1.1rem;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(34,197,94,0.2);
+  border: 1px solid rgba(34,197,94,0.45);
+  color: rgba(187,247,208,0.98);
+}
+.funnel-price-was-wrap{ margin-top: 8px; }
+
+.trust-icons{
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 0;
+}
+.trust-icons li{
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin: 10px 0;
+  font-weight: 650;
+  color: rgba(255,255,255,0.82);
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+.trust-icons--inline{
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0,1fr));
+  gap: 10px;
+  margin: 18px 0 8px;
+}
+.trust-icons--inline li{
+  margin: 0;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.03);
+  font-size: 0.88rem;
+}
+.ti-ic{ font-size: 1.25rem; line-height: 1; flex-shrink: 0; }
+
+.bundle-strip{
+  margin: 22px 0 8px;
+  padding: 16px;
+  border-radius: var(--radius-sm);
+  border: 1px dashed rgba(255,183,3,0.45);
+  background: rgba(255,183,3,0.06);
+}
+.bundle-strip-title{
+  font-weight: 900;
+  font-size: 0.9rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: rgba(255,183,3,0.95);
+  margin-bottom: 8px;
+}
+.bundle-strip-text{
+  margin: 0 0 12px;
+  color: rgba(255,255,255,0.82);
+  font-weight: 650;
+  line-height: 1.5;
+  font-size: 0.95rem;
+}
+.price-was--inline{ font-size: 0.95rem; }
+
+.funnel-form-hint{
+  font-weight: 750;
+  color: rgba(255,255,255,0.88);
+  margin: 0 0 10px;
+  font-size: 0.95rem;
+}
+.funnel-form .field{ margin-bottom: 12px; }
+
+.btn-cta-xl{
+  width: 100%;
+  padding: 14px 18px;
+  font-size: 1.05rem;
+  border-radius: 16px;
+  margin-top: 6px;
+}
+
+.funnel-urgency{
+  margin-top: 18px;
+  padding: 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(255,77,109,0.35);
+  background: rgba(255,77,109,0.08);
+}
+.funnel-urgency-title{
+  font-weight: 900;
+  margin-bottom: 6px;
+  color: rgba(255,255,255,0.95);
+}
+.funnel-urgency p{
+  margin: 0;
+  color: rgba(255,255,255,0.78);
+  font-weight: 650;
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.img-hero--rounded{
+  border-radius: var(--radius);
+  box-shadow: 0 24px 60px rgba(0,0,0,0.35);
+}
+
 @media (max-width: 980px){
   .hero{ grid-template-columns: 1fr; }
   .trust-grid{ grid-template-columns: 1fr; }
@@ -555,5 +886,8 @@ input::placeholder{ color: rgba(255,255,255,0.45); font-weight: 650; }
   .testi-grid{ grid-template-columns: 1fr; }
   .page-grid-2{ grid-template-columns: 1fr; }
   .form-row{ grid-template-columns: 1fr; }
+  .funnel-advantages{ grid-template-columns: 1fr; }
+  .trust-icons--inline{ grid-template-columns: 1fr; }
+  .duo-pack-inner{ flex-direction: column; align-items: stretch; }
 }
 
