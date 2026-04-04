@@ -15,6 +15,7 @@ from flask import (
 )
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import FlaskForm, CSRFProtect
+from flask_wtf.csrf import CSRFError
 from sqlalchemy import func
 from wtforms import IntegerField, RadioField, StringField, TelField, TextAreaField, HiddenField
 from wtforms.validators import DataRequired, Length, NumberRange, Optional, Regexp
@@ -28,11 +29,21 @@ MEDIA_DIR = os.path.join(BASE_DIR, "static", "media")
 
 app = Flask(__name__, template_folder="templates", static_folder="static")
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-secret-change-me")
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
-    "DATABASE_URL",
-    f"sqlite:///{os.path.join(BASE_DIR, 'ecommerce_maquillage.db')}",
-)
+
+_db_url = os.environ.get("DATABASE_URL", "").strip()
+if not _db_url:
+    _db_url = f"sqlite:///{os.path.join(BASE_DIR, 'ecommerce_maquillage.db')}"
+elif _db_url.startswith("postgres://"):
+    # SQLAlchemy / Render : l’URL fournie commence souvent par postgres://
+    _db_url = "postgresql://" + _db_url[len("postgres://") :]
+app.config["SQLALCHEMY_DATABASE_URI"] = _db_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+# Cookies de session cohérents avec HTTPS (Render, etc.)
+if os.environ.get("RENDER") or os.environ.get("FLASK_ENV", "").lower() == "production":
+    app.config["SESSION_COOKIE_SECURE"] = True
+    app.config["SESSION_COOKIE_HTTPONLY"] = True
+    app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 
 db = SQLAlchemy(app)
 csrf = CSRFProtect(app)
@@ -179,9 +190,10 @@ class CheckoutForm(FlaskForm):
     nom_prenom = StringField("Nom et prenom", validators=[DataRequired(), Length(max=120)])
     telephone = TelField(
         "Numero de telephone",
+        filters=[lambda x: "".join((x or "").split()) if x is not None else None],
         validators=[
             DataRequired(),
-            Regexp(r"^[0-9+]{8,20}$", message="Numero invalide"),
+            Regexp(r"^[0-9+]{8,22}$", message="Numero invalide (chiffres et + uniquement, min. 8)"),
             Length(max=30),
         ],
     )
@@ -485,6 +497,24 @@ def thankyou(order_id: int):
         offer_expires_at_iso=expires_iso,
         bundle_info=bundle_info,
     )
+
+
+@app.errorhandler(CSRFError)
+def handle_csrf_error(_e):
+    flash("Session expirée ou formulaire incomplet. Réessayez depuis la page produit ou le panier.", "error")
+    return redirect(request.referrer or url_for("index"))
+
+
+@app.route("/admin/commandes")
+def admin_commandes():
+    """Liste des commandes : définir ADMIN_ORDERS_SECRET sur Render, puis
+    https://ton-site.onrender.com/admin/commandes?cle=VOTRE_SECRET
+    """
+    key = os.environ.get("ADMIN_ORDERS_SECRET", "").strip()
+    if not key or request.args.get("cle") != key:
+        abort(404)
+    orders = OrderLead.query.order_by(OrderLead.created_at.desc()).limit(300).all()
+    return render_template("admin_commandes.html", orders=orders)
 
 
 @app.errorhandler(404)
