@@ -2,14 +2,20 @@
 {% block title %}Catalogue — {{ app_name }}{% endblock %}
 
 {% block content %}
-  <h1 style="font-family:'Playfair Display',serif; margin:18px 0 8px;">Catalogue</h1>
-  <p style="color:var(--muted); margin:0 0 18px; font-weight:650;">
-    Cliquez sur un produit pour voir les détails, puis ajoutez au panier.
-  </p>
+  <header class="catalog-head">
+    <p class="section-kicker">Duo · 1 acheté = 1 offert</p>
+    <h1 class="catalog-title">Choisissez vos produits</h1>
+    <p class="catalog-lead">
+      Deux références complémentaires. Ouvrez une fiche pour voir les détails, photos et prix promo.
+      Le <strong>pack duo</strong> (les deux au panier) débloque <strong>{{ bundle_label }}</strong> :
+      <span class="catalog-inline-price">{{ format_gnf(bundle_special_gnf) }}</span>
+      <span class="price-was catalog-inline-was">{{ format_gnf(bundle_original_gnf) }}</span>
+    </p>
+  </header>
 
   <div class="product-grid">
     {% for p in products %}
-      <article class="card">
+      <article class="card card--lift">
         <div class="card-media">
           <img src="{{ url_for('media', filename=p.main_image) }}" alt="{{ p.name }}" loading="lazy">
         </div>
@@ -19,7 +25,7 @@
           <div style="margin-bottom:12px;">
             {% if p.original_price_gnf %}
               <div class="price-discount">
-                <span class="badge">{{ p.offer_label or 'Offre spéciale' }}</span>
+                <span class="badge">{{ p.offer_label or 'Offre' }}</span>
                 <span class="price-now">{{ format_gnf(p.price_gnf) }}</span>
                 <span class="price-was">Avant : {{ format_gnf(p.original_price_gnf) }}</span>
               </div>
@@ -28,7 +34,7 @@
             {% endif %}
           </div>
           <div class="product-actions">
-            <a class="btn btn-primary" href="{{ url_for('product', slug=p.slug) }}">Voir détails</a>
+            <a class="btn btn-primary" href="{{ url_for('product', slug=p.slug) }}">Voir la fiche</a>
             <form method="POST" action="{{ url_for('cart_add', product_id=p.id) }}" style="margin:0;">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
               <input type="hidden" name="qty" value="1" />
@@ -40,4 +46,3 @@
     {% endfor %}
   </div>
 {% endblock %}
-
