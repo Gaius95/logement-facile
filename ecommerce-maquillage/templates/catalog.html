@@ -30,7 +30,7 @@
           <div class="product-actions">
             <a class="btn btn-primary" href="{{ url_for('product', slug=p.slug) }}">Voir détails</a>
             <form method="POST" action="{{ url_for('cart_add', product_id=p.id) }}" style="margin:0;">
-              {{ csrf_token() }}
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
               <input type="hidden" name="qty" value="1" />
               <button class="btn btn-ghost" type="submit">Ajouter</button>
             </form>
