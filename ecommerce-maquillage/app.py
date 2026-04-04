@@ -304,6 +304,26 @@ def debug_video():
     }
 
 
+@app.template_filter("order_items_lines")
+def order_items_lines_filter(items_json: str):
+    """Pour l’admin : transforme le JSON stocké en lignes lisibles (nom produit + qté)."""
+    try:
+        items = json.loads(items_json or "[]")
+    except Exception:
+        return []
+    out = []
+    for entry in items:
+        try:
+            pid = int(entry.get("product_id"))
+        except (TypeError, ValueError):
+            continue
+        qty = int(entry.get("qty", 1) or 1)
+        p = PRODUCTS_BY_ID.get(pid)
+        name = p["name"] if p else f"Produit #{pid}"
+        out.append({"qty": qty, "name": name, "product_id": pid})
+    return out
+
+
 @app.route("/")
 def index():
     # Petite logique "pro"
