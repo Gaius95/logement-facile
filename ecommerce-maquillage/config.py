@@ -7,18 +7,29 @@ from datetime import timedelta
 
 APP_NAME = os.environ.get("APP_NAME", "Maquillage Pro")
 
+# Bandeau sous le menu (tunnel type promo)
+PROMO_BANNER = os.environ.get(
+    "PROMO_BANNER",
+    "🎁 1 acheté = 1 offert — duo maquillage · offre limitée",
+)
+PROMO_BOGO_LINE = os.environ.get(
+    "PROMO_BOGO_LINE",
+    "Les 2 produits : vous payez un, le second est offert en pack. Paiement à la livraison à Conakry.",
+)
+
 #
-# Images produits (on les sert via une route /media/* qui pointe vers tes images existantes)
+# Images produits : dépose tes fichiers dans static/media/ puis mets le nom exact ici (ex. crayon-1.jpg).
+# Formats conseillés : JPG ou WebP, largeur min. 800px pour les visuels héro.
 #
 PRODUCTS = [
     {
         "id": 1,
         "slug": "makeup-pen-4en1",
         "name": "Crayon Maquillage 4 en 1",
-        "subtitle": "Contour + teint + lèvres (selon utilisation)",
+        "subtitle": "Contour + teint + lèvres — inclus dans l’offre duo 1+1",
         "price_gnf": 150000,
         "original_price_gnf": 250000,
-        "offer_label": "Offre spéciale",
+        "offer_label": "1 acheté = 1 offert",
         "main_image": "p1-main.png",
         "gallery": [
             "p1-main.png",
@@ -34,10 +45,10 @@ PRODUCTS = [
         "id": 2,
         "slug": "fond-de-teint",
         "name": "Fond de teint (teintes)",
-        "subtitle": "Tenue & fini uniforme",
+        "subtitle": "Tenue & fini uniforme — inclus dans l’offre duo 1+1",
         "price_gnf": 150000,
         "original_price_gnf": 250000,
-        "offer_label": "Offre spéciale",
+        "offer_label": "1 acheté = 1 offert",
         "main_image": "p2-main.png",
         "gallery": [
             "p2-main.png",
@@ -61,7 +72,7 @@ TESTIMONIALS = [
     {
         "name": "Fatou S.",
         "city": "Kaloum",
-        "text": "J’ai vu le prix barré (250.000FG) puis le prix spécial (150.000FG). Le compte à rebours m’a motivée. Produit top !",
+        "text": "Le prix barré en rouge, puis l’offre 1 acheté = 1 offert. Le pack duo est top !",
     },
     {
         "name": "Mariama K.",
@@ -70,8 +81,8 @@ TESTIMONIALS = [
     },
 ]
 
-# Pack promo (les 2 produits ensemble)
-BUNDLE_TWO_PIECES_LABEL = os.environ.get("BUNDLE_TWO_PIECES_LABEL", "Pack 2 pièces")
+# Pack promo (les 2 produits ensemble) : logique 1 payé + 1 offert côté prix pack
+BUNDLE_TWO_PIECES_LABEL = os.environ.get("BUNDLE_TWO_PIECES_LABEL", "Pack duo : 1 payé + 1 offert")
 BUNDLE_TWO_PIECES_SPECIAL_GNF = int(os.environ.get("BUNDLE_TWO_PIECES_SPECIAL_GNF", "200000"))
 BUNDLE_TWO_PIECES_ORIGINAL_GNF = int(os.environ.get("BUNDLE_TWO_PIECES_ORIGINAL_GNF", "300000"))  # 150.000 + 150.000
 
@@ -114,7 +125,7 @@ HERO_VIDEO_EMBED_URL = os.environ.get("HERO_VIDEO_EMBED_URL", "").strip()
 HERO_VIDEO_TITLE = os.environ.get("HERO_VIDEO_TITLE", "Regardez la démonstration en 30 secondes")
 HERO_VIDEO_SUBTITLE = os.environ.get(
     "HERO_VIDEO_SUBTITLE",
-    "Cliquez ensuite sur « Accéder au catalogue » pour réserver au prix spécial (150.000FG).",
+    "Ensuite : catalogue — offre duo 1 acheté = 1 offert, prix promo affiché.",
 )
 
 # Vidéo locale (fichier sur l'ordinateur)
