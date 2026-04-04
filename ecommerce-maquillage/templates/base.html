@@ -40,6 +40,14 @@
         </div>
     </header>
 
+    {% if promo_banner %}
+    <div class="promo-banner" role="region" aria-label="Offre en cours">
+        <div class="container promo-banner-inner">
+            <span class="promo-banner-text">{{ promo_banner }}</span>
+        </div>
+    </div>
+    {% endif %}
+
     <div class="trust-bar">
         <div class="container trust-grid">
             <div class="trust-item">
@@ -51,7 +59,7 @@
                 <div class="trust-sub">Conakry gratuite</div>
             </div>
             <div class="trust-item">
-                <div class="trust-title">Offre limitée</div>
+                <div class="trust-title">1 acheté = 1 offert</div>
                 <div class="trust-sub" id="countdownWrap">
                     {% if offer_expires_at_iso %}
                       <span id="countdown" data-expires-at="{{ offer_expires_at_iso }}" data-offer-minutes="{{ offer_minutes }}"></span>
