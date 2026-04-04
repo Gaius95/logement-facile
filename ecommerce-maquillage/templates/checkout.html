@@ -12,6 +12,11 @@
       <h2>Vos infos</h2>
       <form method="POST" action="{{ url_for('checkout') }}">
         {{ form.hidden_tag() }}
+        {% if form.errors %}
+          <div class="flash flash-error" style="margin-bottom:14px;">
+            Vérifie les champs ci-dessous (téléphone : chiffres et + uniquement, sans lettres).
+          </div>
+        {% endif %}
 
         <div class="form-row">
           <div class="field">
