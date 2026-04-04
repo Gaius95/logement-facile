@@ -9,9 +9,10 @@
     </div>
   </div>
 
-  <section class="panel video-wrap" style="margin-top:22px;">
-    <h2 style="margin:0 0 10px; font-size:1.3rem;">Démo rapide</h2>
-    <div class="help" style="margin:0 0 12px;">La vidéo démarre automatiquement. Paiement à la réception.</div>
+  <section class="panel video-wrap funnel-section" style="margin-top:22px;">
+    <p class="section-kicker">Démo · paiement à la livraison</p>
+    <h2 class="funnel-h2">Découvrez le duo en vidéo</h2>
+    <div class="help" style="margin:0 0 12px;">La vidéo démarre en silence (autoplay). Activez le son si besoin.</div>
 
     {% if hero_video_local_url %}
       <div class="video-frame" aria-label="Vidéo de présentation">
@@ -42,32 +43,33 @@
       </div>
     {% else %}
       <div class="help" style="padding:14px; border:1px dashed var(--border); border-radius: var(--radius);">
-        Ajoute l’URL embed de ta vidéo dans `HERO_VIDEO_EMBED_URL`.
+        Ajoute l’URL embed de ta vidéo dans la config (<code>HERO_VIDEO_EMBED_URL</code>) ou place <code>hero-promo.mp4</code> dans <code>static/media</code>.
       </div>
     {% endif %}
 
     <div class="help" style="margin-top:12px;">{{ hero_video_subtitle }}</div>
   </section>
 
-  <section class="hero">
+  <section class="hero funnel-hero">
     <div>
-      <h1>Un look pro dès maintenant.</h1>
-      <p>Crayon 4-en-1 + Fond de teint : commandez, payez à la réception, livraison gratuite à Conakry. Prix spécial pendant le compte à rebours.</p>
+      <p class="section-kicker">Offre limitée</p>
+      <h1>1 acheté = 1 offert</h1>
+      <p class="hero-lead">{{ promo_bogo_line }} Livraison gratuite à Conakry. <span class="price-hint">Le prix barré en rouge = tarif avant promotion.</span></p>
       <div class="hero-actions">
-        <a class="btn btn-primary" href="{{ url_for('catalogue') }}">Voir les produits</a>
-        <a class="btn btn-ghost" href="{{ url_for('cart') }}">
+        <a class="btn btn-primary btn-cta-xl" href="{{ url_for('catalogue') }}">Voir le catalogue</a>
+        <a class="btn btn-ghost btn-cta-xl" href="{{ url_for('cart') }}">
           Panier {% if cart_items_count %}({{ cart_items_count }}){% endif %}
         </a>
       </div>
 
-      <ul class="list">
-        <li>Paiement cash ou Mobile Money à la livraison</li>
-        <li>Offre limitée (compte à rebours)</li>
-        <li>Plusieurs teintes / styles selon votre produit</li>
+      <ul class="list list-check">
+        <li>Deux produits complémentaires — idéal en pack</li>
+        <li>Paiement cash ou Mobile Money quand vous recevez</li>
+        <li>Compte à rebours visible sur le site</li>
       </ul>
     </div>
 
-    <div class="img-hero">
+    <div class="img-hero img-hero--rounded">
       <img
         src="{{ url_for('media', filename=products[0].main_image) }}"
         alt="Produit maquillage"
@@ -76,10 +78,55 @@
     </div>
   </section>
 
-  <h2 class="section-title">Produits phares</h2>
+  <section class="funnel-advantages" aria-label="Pourquoi nous faire confiance">
+    <div class="adv-card">
+      <span class="adv-ic" aria-hidden="true">🚚</span>
+      <div>
+        <h3 class="adv-title">Livraison</h3>
+        <p class="adv-text">Conakry : <strong>gratuite</strong>. Réception rapide selon disponibilité.</p>
+      </div>
+    </div>
+    <div class="adv-card">
+      <span class="adv-ic" aria-hidden="true">🛡️</span>
+      <div>
+        <h3 class="adv-title">Paiement à la livraison</h3>
+        <p class="adv-text">Vous payez à la réception — <strong>Cash</strong> ou <strong>Mobile Money</strong>.</p>
+      </div>
+    </div>
+    <div class="adv-card">
+      <span class="adv-ic" aria-hidden="true">💄</span>
+      <div>
+        <h3 class="adv-title">Duo maquillage</h3>
+        <p class="adv-text">Offre <strong>1 acheté = 1 offert</strong> sur le pack deux pièces.</p>
+      </div>
+    </div>
+    <div class="adv-card">
+      <span class="adv-ic" aria-hidden="true">📍</span>
+      <div>
+        <h3 class="adv-title">Guinée</h3>
+        <p class="adv-text">Service orienté <strong>Conakry</strong> ; hors ville : frais à confirmer.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="duo-pack-banner">
+    <div class="duo-pack-inner">
+      <div>
+        <div class="duo-pack-kicker">{{ bundle_label }}</div>
+        <div class="duo-pack-prices">
+          <span class="funnel-price-now duo-pack-now">{{ format_gnf(bundle_special_gnf) }}</span>
+          <span class="price-was duo-pack-was">{{ format_gnf(bundle_original_gnf) }}</span>
+        </div>
+        <p class="duo-pack-note">Ajoutez les deux références au panier pour appliquer le prix pack.</p>
+      </div>
+      <a class="btn btn-primary btn-cta-xl" href="{{ url_for('catalogue') }}">Composer mon duo</a>
+    </div>
+  </div>
+
+  <h2 class="section-title">Nos produits</h2>
   <div class="product-grid">
     {% for p in products[:6] %}
-      <article class="card">
+      <article class="card card--lift">
         <div class="card-media">
           <img src="{{ url_for('media', filename=p.main_image) }}" alt="{{ p.name }}" loading="lazy">
         </div>
@@ -89,7 +136,7 @@
           <div style="margin-bottom:12px;">
             {% if p.original_price_gnf %}
               <div class="price-discount">
-                <span class="badge">{{ p.offer_label or 'Offre spéciale' }}</span>
+                <span class="badge">{{ p.offer_label or 'Offre' }}</span>
                 <span class="price-now">{{ format_gnf(p.price_gnf) }}</span>
                 <span class="price-was">Avant : {{ format_gnf(p.original_price_gnf) }}</span>
               </div>
@@ -98,7 +145,7 @@
             {% endif %}
           </div>
           <div class="product-actions">
-            <a class="btn btn-primary" href="{{ url_for('product', slug=p.slug) }}">Voir</a>
+            <a class="btn btn-primary" href="{{ url_for('product', slug=p.slug) }}">Détails</a>
             <form method="POST" action="{{ url_for('cart_add', product_id=p.id) }}" style="margin:0;">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
               <input type="hidden" name="qty" value="1" />
@@ -110,22 +157,22 @@
     {% endfor %}
   </div>
 
-  <h2 class="section-title">Pourquoi commander maintenant ?</h2>
+  <h2 class="section-title">Étapes simples</h2>
   <div class="page-grid-2">
-    <div class="panel">
-      <h2>Simple et rapide</h2>
-      <ul class="list">
-        <li>Choisissez le produit</li>
-        <li>Remplissez vos infos (nom + numéro)</li>
-        <li>Payez à la réception (Cash ou Mobile Money)</li>
-      </ul>
+    <div class="panel panel--soft">
+      <h2 class="funnel-h2" style="margin-top:0;">Commander</h2>
+      <ol class="list-steps">
+        <li><span class="step-num">1</span> Choisissez le produit ou le duo</li>
+        <li><span class="step-num">2</span> Panier → finalisez (nom + téléphone)</li>
+        <li><span class="step-num">3</span> Payez à la réception</li>
+      </ol>
     </div>
-    <div class="panel">
-      <h2>Livraison & confiance</h2>
+    <div class="panel panel--soft">
+      <h2 class="funnel-h2" style="margin-top:0;">Confiance</h2>
       <ul class="list">
-        <li>Conakry : livraison gratuite</li>
-        <li>Hors Conakry : à la charge du client</li>
-        <li>Témoignages clients + offre limitée</li>
+        <li>Témoignages clients sur la page</li>
+        <li>Transparence des prix (avant / promo)</li>
+        <li>Contact par téléphone / WhatsApp</li>
       </ul>
     </div>
   </div>
