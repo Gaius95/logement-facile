@@ -30,13 +30,33 @@ MEDIA_DIR = os.path.join(BASE_DIR, "static", "media")
 app = Flask(__name__, template_folder="templates", static_folder="static")
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-secret-change-me")
 
-_db_url = os.environ.get("DATABASE_URL", "").strip()
-if not _db_url:
-    _db_url = f"sqlite:///{os.path.join(BASE_DIR, 'ecommerce_maquillage.db')}"
-elif _db_url.startswith("postgres://"):
-    # SQLAlchemy / Render : l’URL fournie commence souvent par postgres://
-    _db_url = "postgresql://" + _db_url[len("postgres://") :]
-app.config["SQLALCHEMY_DATABASE_URI"] = _db_url
+
+def _resolve_database_url() -> str:
+    """SQLite par défaut ; PostgreSQL si DATABASE_URL est valide (Render)."""
+    sqlite_fallback = f"sqlite:///{os.path.join(BASE_DIR, 'ecommerce_maquillage.db')}"
+    raw = (os.environ.get("DATABASE_URL") or "").strip()
+    if not raw:
+        return sqlite_fallback
+    if raw.startswith("postgres://"):
+        raw = "postgresql://" + raw[len("postgres://") :]
+    try:
+        from sqlalchemy.engine.url import make_url
+
+        make_url(raw)
+        return raw
+    except Exception:
+        # URL illisible (copié mal, placeholder, mot de passe avec caractères non encodés…)
+        import warnings
+
+        warnings.warn(
+            "DATABASE_URL ignorée (URL invalide pour SQLAlchemy). Utilisation de SQLite. "
+            "Vérifie la variable sur Render ou copie l’URL depuis la base PostgreSQL.",
+            stacklevel=1,
+        )
+        return sqlite_fallback
+
+
+app.config["SQLALCHEMY_DATABASE_URI"] = _resolve_database_url()
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 # Cookies de session cohérents avec HTTPS (Render, etc.)
@@ -245,6 +265,11 @@ def inject_common():
         "hero_video_title": app_config.HERO_VIDEO_TITLE,
         "hero_video_subtitle": app_config.HERO_VIDEO_SUBTITLE,
         "shipping_outside_note": app_config.SHIPPING_OUTSIDE_CONAKRY_NOTE,
+        "promo_banner": getattr(app_config, "PROMO_BANNER", ""),
+        "promo_bogo_line": getattr(app_config, "PROMO_BOGO_LINE", ""),
+        "bundle_label": app_config.BUNDLE_TWO_PIECES_LABEL,
+        "bundle_special_gnf": int(app_config.BUNDLE_TWO_PIECES_SPECIAL_GNF),
+        "bundle_original_gnf": int(app_config.BUNDLE_TWO_PIECES_ORIGINAL_GNF),
     }
 
 
