@@ -19,14 +19,14 @@
               <div>
                 <div class="qty">
                   <form method="POST" action="{{ url_for('cart_update') }}" style="display:flex; gap:10px; align-items:center;">
-                    {{ csrf_token() }}
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <input type="hidden" name="product_id" value="{{ it.product.id }}">
                     <input type="number" name="qty" value="{{ it.qty }}" min="1" max="10">
                     <button class="btn btn-ghost" type="submit" style="padding:10px 12px; border-radius:14px;">OK</button>
                   </form>
                 </div>
                 <form method="POST" action="{{ url_for('cart_remove', product_id=it.product.id) }}" style="margin-top:10px;">
-                  {{ csrf_token() }}
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                   <button class="btn btn-ghost" type="submit" style="padding:10px 12px; border-radius:14px; width:100%;">Retirer</button>
                 </form>
               </div>
