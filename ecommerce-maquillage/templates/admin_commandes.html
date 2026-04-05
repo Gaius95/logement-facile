@@ -5,18 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Commandes — admin</title>
   <style>
-    body { font-family: system-ui, sans-serif; margin: 16px; background: #111; color: #eee; }
+    body { font-family: system-ui, sans-serif; margin: 16px; background: #f5f0ea; color: #1a1523; }
     h1 { font-size: 1.2rem; }
-    table { border-collapse: collapse; width: 100%; max-width: 1200px; font-size: 0.85rem; }
-    th, td { border: 1px solid #444; padding: 8px; text-align: left; vertical-align: top; }
-    th { background: #222; }
-    tr:nth-child(even) { background: #1a1a1a; }
-    .muted { color: #888; }
+    table { border-collapse: collapse; width: 100%; max-width: 1200px; font-size: 0.85rem; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 28px rgba(26,21,35,0.08); }
+    th, td { border: 1px solid rgba(26,21,35,0.1); padding: 8px; text-align: left; vertical-align: top; }
+    th { background: #faf8f5; }
+    tr:nth-child(even) { background: #fffefb; }
+    .muted { color: #5c5566; }
   </style>
 </head>
 <body>
   <h1>Commandes ({{ orders|length }})</h1>
   <p class="muted">Ne partage pas cette URL. Garde ta clé secrète privée.</p>
+  <p class="muted">Référence : <strong>id 1</strong> = Crayon 4 en 1 · <strong>id 2</strong> = Fond de teint (voir aussi la colonne « Produits commandés »).</p>
   {% if not orders %}
     <p>Aucune commande enregistrée.</p>
   {% else %}
@@ -27,10 +28,12 @@
           <th>Date</th>
           <th>Nom</th>
           <th>Téléphone</th>
+          <th>Ville</th>
+          <th>Adresse</th>
           <th>Zone</th>
           <th>Paiement</th>
           <th>Total</th>
-          <th>Articles (JSON)</th>
+          <th>Produits commandés</th>
           <th>UTM</th>
         </tr>
       </thead>
@@ -41,10 +44,19 @@
             <td>{{ o.created_at }}</td>
             <td>{{ o.nom_prenom }}</td>
             <td><strong>{{ o.telephone }}</strong></td>
-            <td>{{ o.zone_livraison }}{% if o.adresse_hors_conakry %}<br/><span class="muted">{{ o.adresse_hors_conakry }}</span>{% endif %}</td>
+            <td>{{ o.ville or "—" }}</td>
+            <td>{% if o.adresse_complete %}{{ o.adresse_complete }}{% elif o.adresse_hors_conakry %}<span class="muted">{{ o.adresse_hors_conakry }}</span>{% else %}—{% endif %}</td>
+            <td>{{ o.zone_livraison }}</td>
             <td>{{ o.payment_method }}</td>
             <td>{{ o.grand_total_gnf }} GNF</td>
-            <td><code style="word-break:break-all;">{{ o.items_json }}</code></td>
+            <td>
+              {% for line in o.items_json|order_items_lines %}
+                <strong>{{ line.qty }}×</strong> {{ line.name }}
+                <span class="muted">(id {{ line.product_id }})</span>{% if not loop.last %}<br/>{% endif %}
+              {% else %}
+                <span class="muted">—</span>
+              {% endfor %}
+            </td>
             <td class="muted">{{ o.utm_source or "—" }} / {{ o.utm_campaign or "—" }}</td>
           </tr>
         {% endfor %}
