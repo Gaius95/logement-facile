@@ -1,0 +1,11 @@
+{% extends "layout_inner.html" %}
+{% block title %}Recherche — {{ app_name }}{% endblock %}
+{% block content %}
+<h1 class="page-title">Recherche d’une parcelle</h1>
+<p class="page-lead">Choisis un mode de recherche.</p>
+<div class="grid-3">
+  <a class="link-card" href="{{ url_for('search_by_id') }}">Par identifiant<span>Ex. SA-2024-001</span></a>
+  <a class="link-card" href="{{ url_for('map_sig') }}">Par carte<span>Carte interactive</span></a>
+  <a class="link-card" href="{{ url_for('search_by_commune') }}">Par commune / quartier<span>Filtre geographique</span></a>
+</div>
+{% endblock %}

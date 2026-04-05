@@ -1,0 +1,23 @@
+{% extends "layout_inner.html" %}
+{% block title %}Vente de biens — {{ app_name }}{% endblock %}
+{% block content %}
+<h1 class="page-title">Espace vente</h1>
+<p class="page-lead">
+  {% if current_user %}
+    <a class="btn btn-primary" href="{{ url_for('listing_new') }}">Deposer une annonce</a>
+  {% else %}
+    <a href="{{ url_for('auth_login') }}">Connecte-toi</a> pour deposer une annonce.
+  {% endif %}
+</p>
+<div class="form-grid" style="gap:16px;">
+  {% for l in listings %}
+    <div class="card-panel">
+      <h2 style="margin:0 0 8px;font-size:1.15rem;"><a href="{{ url_for('listing_detail', listing_id=l.id) }}">{{ l.title }}</a></h2>
+      <p class="muted" style="margin:0 0 8px;">{% if l.price_cfa %}{{ l.price_cfa }} FCFA{% else %}Prix sur demande{% endif %} · {{ l.status }}</p>
+      <p style="margin:0;">{{ (l.description or '')[:160] }}{% if l.description and l.description|length > 160 %}…{% endif %}</p>
+    </div>
+  {% else %}
+    <p class="muted">Aucune annonce publiee pour l’instant.</p>
+  {% endfor %}
+</div>
+{% endblock %}

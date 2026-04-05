@@ -1,0 +1,34 @@
+{% extends "layout_inner.html" %}
+{% block title %}Recherche par commune — {{ app_name }}{% endblock %}
+{% block content %}
+<h1 class="page-title">Par commune / quartier</h1>
+<form method="post" class="card-panel form-grid two">
+  <div>
+    <label for="commune">Commune</label>
+    <input id="commune" name="commune" type="text" value="{{ commune }}" placeholder="Sassandra" />
+  </div>
+  <div>
+    <label for="quartier">Quartier</label>
+    <input id="quartier" name="quartier" type="text" value="{{ quartier }}" placeholder="Centre-ville" />
+  </div>
+  <button type="submit" class="btn btn-primary">Rechercher</button>
+</form>
+{% if parcels %}
+  <div class="table-wrap">
+    <table class="data">
+      <thead><tr><th>ID</th><th>Commune</th><th>Quartier</th><th>Statut</th><th></th></tr></thead>
+      <tbody>
+        {% for p in parcels %}
+        <tr>
+          <td>{{ p.public_id }}</td>
+          <td>{{ p.commune }}</td>
+          <td>{{ p.quartier }}</td>
+          <td>{{ p.status }}</td>
+          <td><a href="{{ url_for('parcel_detail', public_id=p.public_id) }}">Fiche</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endif %}
+{% endblock %}

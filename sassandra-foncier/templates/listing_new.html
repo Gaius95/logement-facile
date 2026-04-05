@@ -1,0 +1,35 @@
+{% extends "layout_inner.html" %}
+{% block title %}Nouvelle annonce — {{ app_name }}{% endblock %}
+{% block content %}
+<h1 class="page-title">Deposer une annonce</h1>
+<p class="page-lead">Soumission pour validation par un agent.</p>
+<form method="post" class="card-panel form-grid" style="max-width:560px;">
+  <div>
+    <label for="title">Titre du bien</label>
+    <input id="title" name="title" type="text" required />
+  </div>
+  <div>
+    <label for="parcel_public_id">Identifiant parcelle (optionnel)</label>
+    <input id="parcel_public_id" name="parcel_public_id" type="text" placeholder="SA-2024-001" />
+  </div>
+  <div>
+    <label for="price_cfa">Prix (FCFA)</label>
+    <input id="price_cfa" name="price_cfa" type="number" min="0" />
+  </div>
+  <div class="form-grid two">
+    <div>
+      <label for="lat">Latitude</label>
+      <input id="lat" name="lat" type="text" placeholder="4.95" />
+    </div>
+    <div>
+      <label for="lng">Longitude</label>
+      <input id="lng" name="lng" type="text" placeholder="-6.08" />
+    </div>
+  </div>
+  <div>
+    <label for="description">Description</label>
+    <textarea id="description" name="description"></textarea>
+  </div>
+  <button type="submit" class="btn btn-primary">Soumettre</button>
+</form>
+{% endblock %}

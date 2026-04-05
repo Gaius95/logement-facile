@@ -1,0 +1,28 @@
+{% extends "layout_inner.html" %}
+{% block title %}Nouvelle demande — {{ app_name }}{% endblock %}
+{% block content %}
+<h1 class="page-title">Nouvelle demande</h1>
+<form method="post" class="card-panel form-grid" style="max-width:560px;">
+  <div>
+    <label for="request_type">Type</label>
+    <select id="request_type" name="request_type" required>
+      {% for val, label in types %}
+        <option value="{{ val }}">{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div>
+    <label for="parcel_public_id">Identifiant parcelle (optionnel)</label>
+    <input id="parcel_public_id" name="parcel_public_id" type="text" placeholder="SA-2024-001" />
+  </div>
+  <div>
+    <label for="subject">Sujet</label>
+    <input id="subject" name="subject" type="text" required />
+  </div>
+  <div>
+    <label for="body">Detail</label>
+    <textarea id="body" name="body" required></textarea>
+  </div>
+  <button type="submit" class="btn btn-primary">Envoyer</button>
+</form>
+{% endblock %}

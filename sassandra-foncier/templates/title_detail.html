@@ -1,0 +1,15 @@
+{% extends "layout_inner.html" %}
+{% block title %}Titre {{ title.reference_no }} — {{ app_name }}{% endblock %}
+{% block content %}
+<h1 class="page-title">Titre foncier numerique</h1>
+<p class="page-lead">Parcelle {{ parcel.public_id }}</p>
+<div class="card-panel">
+  <p><strong>Reference</strong> : {{ title.reference_no }}</p>
+  <p><strong>Date d’emission</strong> : {{ title.issued_at.strftime('%d/%m/%Y') }}</p>
+  <p><strong>Hash authenticite</strong> : <code style="word-break:break-all;font-size:0.85rem;">{{ title.authenticity_hash }}</code></p>
+  <p>
+    <a class="btn btn-primary" href="{{ url_for('title_pdf', public_id=parcel.public_id) }}">Telecharger PDF</a>
+    <a class="btn btn-ghost" href="{{ url_for('title_verify') }}">Verifier authenticite</a>
+  </p>
+</div>
+{% endblock %}

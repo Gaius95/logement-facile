@@ -1,0 +1,26 @@
+{% extends "layout_inner.html" %}
+{% block title %}Mes demandes — {{ app_name }}{% endblock %}
+{% block content %}
+<h1 class="page-title">Demandes administratives</h1>
+<p class="page-lead"><a href="{{ url_for('requests_new') }}">Nouvelle demande</a></p>
+{% if user_requests %}
+  <div class="table-wrap">
+    <table class="data">
+      <thead><tr><th>Reference</th><th>Type</th><th>Sujet</th><th>Statut</th><th>Date</th></tr></thead>
+      <tbody>
+        {% for r in user_requests %}
+        <tr>
+          <td><a href="{{ url_for('request_track', ref=r.reference_code) }}">{{ r.reference_code }}</a></td>
+          <td>{{ r.request_type }}</td>
+          <td>{{ r.subject }}</td>
+          <td>{{ r.status }}</td>
+          <td>{{ r.created_at.strftime('%d/%m/%Y') }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% else %}
+  <p class="muted">Aucune demande pour l’instant.</p>
+{% endif %}
+{% endblock %}

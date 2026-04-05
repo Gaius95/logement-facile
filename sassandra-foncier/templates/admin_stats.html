@@ -1,0 +1,12 @@
+{% extends "layout_inner.html" %}
+{% block title %}Statistiques — {{ app_name }}{% endblock %}
+{% block content %}
+{% include "partials/_admin_nav.html" %}
+<h1 class="page-title">Statistiques</h1>
+<div class="grid-3">
+  <div class="card-panel"><strong>{{ n_users }}</strong><br/><span class="muted">Utilisateurs</span></div>
+  <div class="card-panel"><strong>{{ n_parcels }}</strong><br/><span class="muted">Parcelles</span></div>
+  <div class="card-panel"><strong>{{ n_titles }}</strong><br/><span class="muted">Titres</span></div>
+</div>
+<p class="page-lead" style="margin-top:20px;">Demandes enregistrees : <strong>{{ n_req }}</strong></p>
+{% endblock %}

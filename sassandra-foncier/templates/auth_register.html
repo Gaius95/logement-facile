@@ -1,0 +1,25 @@
+{% extends "layout_inner.html" %}
+{% block title %}Inscription — {{ app_name }}{% endblock %}
+{% block content %}
+<h1 class="page-title">Creer un compte</h1>
+<p class="page-lead">Compte citoyen pour demandes administratives et annonces.</p>
+<form method="post" class="card-panel form-grid" style="max-width:480px;">
+  <div>
+    <label for="full_name">Nom complet</label>
+    <input id="full_name" name="full_name" type="text" required />
+  </div>
+  <div>
+    <label for="phone">Telephone (optionnel)</label>
+    <input id="phone" name="phone" type="tel" />
+  </div>
+  <div>
+    <label for="email">Email</label>
+    <input id="email" name="email" type="email" required autocomplete="email" />
+  </div>
+  <div>
+    <label for="password">Mot de passe</label>
+    <input id="password" name="password" type="password" required minlength="6" autocomplete="new-password" />
+  </div>
+  <button type="submit" class="btn btn-primary">S’inscrire</button>
+</form>
+{% endblock %}

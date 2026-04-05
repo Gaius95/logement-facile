@@ -1,0 +1,41 @@
+{% extends "layout_inner.html" %}
+{% block title %}Parcelle {{ parcel.public_id }} — {{ app_name }}{% endblock %}
+{% block content %}
+<h1 class="page-title">{{ parcel.public_id }}</h1>
+<p class="page-lead">{{ parcel.commune }} — {{ parcel.quartier }}</p>
+
+<div class="card-panel">
+  <h2 style="margin-top:0;font-size:1.1rem;">Informations</h2>
+  <ul style="margin:0;padding-left:1.2rem;line-height:1.7;">
+    <li><strong>Proprietaire (extrait)</strong> : {{ parcel.owner_display or 'Non communique' }}</li>
+    <li><strong>Statut</strong> : {{ parcel.status }}</li>
+    <li><strong>Usage</strong> : {{ parcel.usage }}</li>
+    <li><strong>Superficie</strong> : {{ parcel.area_m2 }} m²</li>
+    <li><strong>Coordonnees</strong> : {{ parcel.lat|round(5) }}, {{ parcel.lng|round(5) }}</li>
+  </ul>
+</div>
+
+<div class="card-panel">
+  <h2 style="margin-top:0;font-size:1.1rem;">Historique</h2>
+  {% for h in history %}
+    <p style="margin:10px 0;border-bottom:1px solid #eee;padding-bottom:10px;">
+      <strong>{{ h.label }}</strong> — {{ h.created_at.strftime('%d/%m/%Y') }}<br/>
+      <span class="muted">{{ h.detail or '' }}</span>
+    </p>
+  {% else %}
+    <p class="muted">Aucun evenement.</p>
+  {% endfor %}
+</div>
+
+<div class="card-panel">
+  <h2 style="margin-top:0;font-size:1.1rem;">Actions</h2>
+  <p>
+    <a class="btn btn-primary" href="{{ url_for('map_sig') }}?focus={{ parcel.public_id }}">Voir sur la carte</a>
+    {% if title %}
+      <a class="btn btn-ghost" href="{{ url_for('title_view', public_id=parcel.public_id) }}">Titre numerique / ACD</a>
+    {% else %}
+      <span class="muted">Pas de titre numerique pour cette parcelle.</span>
+    {% endif %}
+  </p>
+</div>
+{% endblock %}

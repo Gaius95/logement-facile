@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}Accueil — {{ app_name }}{% endblock %}
+
+{% block body %}
+<div class="page-home">
+  <div class="hero-bg" aria-hidden="true">
+    {% if hero_image_urls %}
+      {% for url in hero_image_urls %}
+        <div class="hero-bg-slide{% if loop.first %} is-active{% endif %}" style="background-image:url('{{ url }}');"></div>
+      {% endfor %}
+    {% else %}
+      <div class="hero-bg-slide hero-bg-placeholder is-active"></div>
+    {% endif %}
+    <div class="hero-bg-scrim"></div>
+  </div>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="{{ url_for('index') }}">{{ app_name }}</a>
+      <nav class="nav">
+        <a href="{{ url_for('search_hub') }}">Recherche</a>
+        <a href="{{ url_for('map_sig') }}">Carte</a>
+        <a href="{{ url_for('listings_list') }}">Vente</a>
+        {% if current_user %}
+          <a href="{{ url_for('requests_list') }}">Mes demandes</a>
+        {% endif %}
+        {% if current_user and current_user.role in ['admin','agent'] %}
+          <a href="{{ url_for('admin_dashboard') }}">Admin</a>
+        {% endif %}
+        {% if current_user %}
+          <a class="btn-nav" href="{{ url_for('auth_logout') }}">Deconnexion</a>
+        {% else %}
+          <a href="{{ url_for('auth_login') }}">Connexion</a>
+          <a class="btn-nav" href="{{ url_for('auth_register') }}">Inscription</a>
+        {% endif %}
+      </nav>
+    </div>
+  </header>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="container" style="position:relative;z-index:12;padding-top:12px;">
+        {% for category, message in messages %}
+          <div class="flash flash-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <main class="hero-content">
+    <div class="container hero-grid">
+      <div class="hero-copy">
+        <p class="hero-kicker">Plateforme foncière — Sassandra</p>
+        <h1>Transparence, cartographie et services administratifs réunis</h1>
+        <p class="hero-lead">
+          Recherchez une parcelle, consultez les informations utiles et préparez vos démarches en ligne.
+        </p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="{{ url_for('search_hub') }}">Rechercher une parcelle</a>
+          <a class="btn btn-ghost" href="{{ url_for('map_sig') }}">Voir la carte SIG</a>
+        </div>
+        {% if hero_image_urls|length > 1 %}
+        <p class="hero-dots" id="heroDots" aria-live="polite"></p>
+        {% endif %}
+      </div>
+    </div>
+  </main>
+
+  <section class="trust-strip">
+    <div class="container trust-inner">
+      <a class="trust-item" href="{{ url_for('search_hub') }}" style="text-decoration:none;color:inherit;display:block;">
+        <strong>Recherche</strong><span>par identifiant, carte ou commune</span>
+      </a>
+      <a class="trust-item" href="{{ url_for('map_sig') }}" style="text-decoration:none;color:inherit;display:block;">
+        <strong>Carte</strong><span>vue SIG interactive</span>
+      </a>
+      <a class="trust-item" href="{{ url_for('requests_list') if current_user else url_for('auth_login') }}" style="text-decoration:none;color:inherit;display:block;">
+        <strong>Demandes</strong><span>suivi de dossier</span>
+      </a>
+    </div>
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  window.__HERO_INTERVAL__ = {{ hero_interval_ms }};
+  window.__HERO_COUNT__ = {{ hero_image_urls|length }};
+</script>
+<script src="{{ url_for('static', filename='js/home-hero.js') }}"></script>
+{% endblock %}

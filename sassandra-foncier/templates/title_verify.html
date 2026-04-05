@@ -1,0 +1,22 @@
+{% extends "layout_inner.html" %}
+{% block title %}Verifier un titre — {{ app_name }}{% endblock %}
+{% block content %}
+<h1 class="page-title">Verifier l’authenticite</h1>
+<p class="page-lead">Saisis la reference du titre et le hash affiche sur le document.</p>
+<form method="post" class="card-panel form-grid" style="max-width:520px;">
+  <div>
+    <label for="reference">Reference du titre</label>
+    <input id="reference" name="reference" type="text" required placeholder="TF-CI-SA2024001" />
+  </div>
+  <div>
+    <label for="hash">Hash (SHA-256 complet)</label>
+    <input id="hash" name="hash" type="text" required placeholder="64 caracteres hexadecimaux" />
+  </div>
+  <button type="submit" class="btn btn-primary">Verifier</button>
+</form>
+{% if result == 'ok' %}
+  <div class="flash flash-success">Document authentique (correspondance trouvee).</div>
+{% elif result == 'bad' %}
+  <div class="flash flash-error">Pas de correspondance. Verifie les champs.</div>
+{% endif %}
+{% endblock %}

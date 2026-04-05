@@ -1,0 +1,34 @@
+{% extends "layout_inner.html" %}
+{% block shell_class %}page-shell--wide{% endblock %}
+{% block head_extra %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+{% endblock %}
+{% block title %}Carte SIG — {{ app_name }}{% endblock %}
+{% block content %}
+<h1 class="page-title">Carte des parcelles (demo)</h1>
+<p class="page-lead">Clic sur un marqueur pour ouvrir la fiche.</p>
+<div id="map-sig" class="map-embed"></div>
+{% endblock %}
+{% block scripts %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script>
+(function(){
+  var parcels = {{ parcels_json|safe }};
+  var focusId = {{ focus_public_id|tojson }};
+  var map = L.map('map-sig').setView([4.95, -6.08], 13);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; OpenStreetMap'
+  }).addTo(map);
+  if (!parcels.length) return;
+  parcels.forEach(function(p){
+    var m = L.marker([p.lat, p.lng]).addTo(map);
+    m.bindPopup('<a href="/parcelle/' + encodeURIComponent(p.id) + '">' + p.id + '</a>');
+    if (focusId && p.id === focusId) {
+      map.setView([p.lat, p.lng], 15);
+      m.openPopup();
+    }
+  });
+})();
+</script>
+{% endblock %}

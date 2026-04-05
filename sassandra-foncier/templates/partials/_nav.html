@@ -1,0 +1,23 @@
+<header class="site-header site-header--inner">
+  <div class="container header-inner">
+    <a class="brand" href="{{ url_for('index') }}">{{ app_name }}</a>
+    <nav class="nav">
+      <a href="{{ url_for('search_hub') }}">Recherche</a>
+      <a href="{{ url_for('map_sig') }}">Carte</a>
+      <a href="{{ url_for('listings_list') }}">Vente</a>
+      {% if current_user %}
+        <a href="{{ url_for('requests_list') }}">Mes demandes</a>
+      {% endif %}
+      {% if current_user and current_user.role in ['admin','agent'] %}
+        <a href="{{ url_for('admin_dashboard') }}">Admin</a>
+      {% endif %}
+      {% if current_user %}
+        <span class="nav-user">{{ current_user.full_name }}</span>
+        <a class="btn-nav btn-nav--ghost" href="{{ url_for('auth_logout') }}">Deconnexion</a>
+      {% else %}
+        <a href="{{ url_for('auth_login') }}">Connexion</a>
+        <a class="btn-nav" href="{{ url_for('auth_register') }}">Inscription</a>
+      {% endif %}
+    </nav>
+  </div>
+</header>

@@ -1,0 +1,16 @@
+Images d’arrière-plan du hero (rotation toutes les 5 secondes)
+================================================================
+
+Les liens Pinterest / Facebook ne sont pas des liens directs vers un fichier image :
+il faut enregistrer chaque visuel sur ton PC, puis les placer ICI avec ces noms :
+
+  01-bassin-ci.jpg      — réf. Pinterest (Bassin / Ivory Coast)
+  02-kalemie.jpg        — réf. Pinterest (Kalemie / lac)
+  03-facebook-1.jpg     — réf. partage Facebook
+  04-facebook-2.jpg
+  05-facebook-3.jpg
+
+Formats conseillés : JPG ou WebP, largeur min. 1600 px pour un rendu net.
+
+Tu peux renommer tes fichiers pour correspondre à la liste ci-dessus, ou modifier
+la liste HERO_IMAGES dans config.py à la racine du projet.

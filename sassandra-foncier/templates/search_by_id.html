@@ -1,0 +1,19 @@
+{% extends "layout_inner.html" %}
+{% block title %}Recherche par identifiant — {{ app_name }}{% endblock %}
+{% block content %}
+<h1 class="page-title">Par identifiant</h1>
+<form method="post" class="card-panel form-grid two" style="align-items:end;">
+  <div>
+    <label for="public_id">Identifiant parcelle</label>
+    <input id="public_id" name="public_id" type="text" value="{{ q }}" placeholder="SA-2024-001" />
+  </div>
+  <button type="submit" class="btn btn-primary">Rechercher</button>
+</form>
+{% if parcel %}
+  <div class="card-panel">
+    <p><strong>{{ parcel.public_id }}</strong> — {{ parcel.commune }}, {{ parcel.quartier }}</p>
+    <p class="muted">Statut : {{ parcel.status }} · Usage : {{ parcel.usage }} · {{ parcel.area_m2 }} m²</p>
+    <a class="btn btn-primary" href="{{ url_for('parcel_detail', public_id=parcel.public_id) }}">Voir la fiche</a>
+  </div>
+{% endif %}
+{% endblock %}

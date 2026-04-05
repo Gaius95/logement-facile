@@ -1,0 +1,23 @@
+{% extends "layout_inner.html" %}
+{% block title %}{{ listing.title }} — {{ app_name }}{% endblock %}
+{% block content %}
+<h1 class="page-title">{{ listing.title }}</h1>
+<p class="page-lead">
+  {% if listing.price_cfa %}<strong>{{ listing.price_cfa }} FCFA</strong> · {% endif %}
+  {{ listing.status }}
+</p>
+<div class="card-panel">
+  <p style="white-space:pre-wrap;">{{ listing.description or 'Pas de description.' }}</p>
+  {% if listing.parcel_public_id %}
+    <p><a class="btn btn-ghost" href="{{ url_for('parcel_detail', public_id=listing.parcel_public_id) }}">Voir parcelle {{ listing.parcel_public_id }}</a></p>
+  {% endif %}
+  {% if listing.lat and listing.lng %}
+    <p class="muted">Geoloc : {{ listing.lat|round(5) }}, {{ listing.lng|round(5) }}</p>
+  {% endif %}
+</div>
+<div class="card-panel" style="border-style:dashed;">
+  <h2 style="margin-top:0;font-size:1.05rem;">Espace negociation (smart)</h2>
+  <p class="muted">Module a brancher : messagerie securisee, offres, identite verifiee. Pour l’instant, contacte l’administrateur via la fiche parcelle ou les demandes.</p>
+</div>
+<p><a href="{{ url_for('listings_list') }}">Retour aux annonces</a></p>
+{% endblock %}

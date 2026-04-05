@@ -1,0 +1,21 @@
+{% extends "layout_inner.html" %}
+{% block title %}Agents — {{ app_name }}{% endblock %}
+{% block content %}
+{% include "partials/_admin_nav.html" %}
+<h1 class="page-title">Agents et administrateurs</h1>
+<div class="table-wrap">
+  <table class="data">
+    <thead><tr><th>Nom</th><th>Email</th><th>Role</th><th>Identite verifiee</th></tr></thead>
+    <tbody>
+      {% for a in agents %}
+      <tr>
+        <td>{{ a.full_name }}</td>
+        <td>{{ a.email }}</td>
+        <td>{{ a.role }}</td>
+        <td>{{ 'oui' if a.identity_verified else 'non' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

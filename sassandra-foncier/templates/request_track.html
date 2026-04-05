@@ -1,0 +1,17 @@
+{% extends "layout_inner.html" %}
+{% block title %}Suivi {{ req.reference_code }} — {{ app_name }}{% endblock %}
+{% block content %}
+<h1 class="page-title">Suivi dossier</h1>
+<div class="card-panel">
+  <p><strong>Reference</strong> : {{ req.reference_code }}</p>
+  <p><strong>Type</strong> : {{ req.request_type }}</p>
+  <p><strong>Statut</strong> : {{ req.status }}</p>
+  <p><strong>Sujet</strong> : {{ req.subject }}</p>
+  <p><strong>Message</strong> :</p>
+  <p class="muted" style="white-space:pre-wrap;">{{ req.body }}</p>
+  {% if req.parcel_public_id %}
+    <p><strong>Parcelle</strong> : <a href="{{ url_for('parcel_detail', public_id=req.parcel_public_id) }}">{{ req.parcel_public_id }}</a></p>
+  {% endif %}
+  <p class="muted">Cree le {{ req.created_at.strftime('%d/%m/%Y %H:%M') }}</p>
+</div>
+{% endblock %}

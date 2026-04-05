@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block body %}
+{% include "partials/_nav.html" %}
+<main class="page-inner">
+  <div class="container page-shell {% block shell_class %}{% endblock %}">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-stack">
+          {% for category, message in messages %}
+            <div class="flash flash-{{ category }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </div>
+</main>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends "layout_inner.html" %}
+{% block title %}Validation — {{ app_name }}{% endblock %}
+{% block content %}
+{% include "partials/_admin_nav.html" %}
+<h1 class="page-title">Validation des annonces</h1>
+{% if listings %}
+  {% for l in listings %}
+    <div class="card-panel" style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;">
+      <div>
+        <strong>{{ l.title }}</strong>
+        <p class="muted" style="margin:4px 0 0;">{{ l.price_cfa }} FCFA · {{ l.created_at.strftime('%d/%m/%Y') }}</p>
+      </div>
+      <form method="post" action="{{ url_for('admin_publish_listing', listing_id=l.id) }}">
+        <button type="submit" class="btn btn-primary">Publier</button>
+      </form>
+    </div>
+  {% endfor %}
+{% else %}
+  <p class="muted">Aucune annonce en attente.</p>
+{% endif %}
+{% endblock %}

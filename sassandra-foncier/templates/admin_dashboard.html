@@ -1,0 +1,12 @@
+{% extends "layout_inner.html" %}
+{% block title %}Admin — {{ app_name }}{% endblock %}
+{% block content %}
+{% include "partials/_admin_nav.html" %}
+<h1 class="page-title">Administration</h1>
+<p class="page-lead">Vue d’ensemble (donnees de demonstration).</p>
+<div class="grid-3">
+  <div class="card-panel"><strong>{{ n_parcels }}</strong><br/><span class="muted">Parcelles</span></div>
+  <div class="card-panel"><strong>{{ n_req }}</strong><br/><span class="muted">Demandes en attente</span></div>
+  <div class="card-panel"><strong>{{ n_list }}</strong><br/><span class="muted">Annonces a valider</span></div>
+</div>
+{% endblock %}
