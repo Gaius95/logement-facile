@@ -9,7 +9,8 @@
 
   <div class="page-grid-2">
     <section class="panel">
-      <h2>Vos infos</h2>
+      <h2>Vos coordonnées</h2>
+      <p class="help" style="margin-top:0; margin-bottom:14px;">Comme sur un tunnel classique : nom complet, téléphone, ville, adresse de livraison.</p>
       <form method="POST" action="{{ url_for('checkout') }}">
         {{ form.hidden_tag() }}
         {% if form.errors %}
@@ -35,6 +36,14 @@
           </div>
         </div>
 
+        <div class="field" style="margin-top:12px;">
+          {{ form.ville.label }}
+          {{ form.ville(type="text", placeholder="Ex: Conakry, Kindia…") }}
+          {% for e in form.ville.errors %}
+            <div class="error">{{ e }}</div>
+          {% endfor %}
+        </div>
+
         <div style="margin-top:14px;">
           <h3 style="margin:0 0 10px;">Livraison</h3>
           <div class="radio-row">
@@ -53,14 +62,12 @@
           </div>
         </div>
 
-        <div id="adresseWrap" style="margin-top:12px; {% if form.zone_livraison.data != 'outside' %}display:none;{% endif %}">
-          <div class="field">
-            {{ form.adresse_hors_conakry.label }}
-            {{ form.adresse_hors_conakry(placeholder="Quartier/Commune, point de repère...") }}
-            {% for e in form.adresse_hors_conakry.errors %}
-              <div class="error">{{ e }}</div>
-            {% endfor %}
-          </div>
+        <div class="field" style="margin-top:12px;">
+          {{ form.adresse_complete.label }}
+          {{ form.adresse_complete(placeholder="Quartier, commune, rue ou lieu-dit, point de repère…") }}
+          {% for e in form.adresse_complete.errors %}
+            <div class="error">{{ e }}</div>
+          {% endfor %}
         </div>
 
         <div style="margin-top:16px;">
@@ -134,4 +141,3 @@
     </script>
   {% endif %}
 {% endblock %}
-
