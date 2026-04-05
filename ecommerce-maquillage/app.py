@@ -16,9 +16,9 @@ from flask import (
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import FlaskForm, CSRFProtect
 from flask_wtf.csrf import CSRFError
-from sqlalchemy import func
+from sqlalchemy import func, inspect, text
 from wtforms import IntegerField, RadioField, StringField, TelField, TextAreaField, HiddenField
-from wtforms.validators import DataRequired, Length, NumberRange, Optional, Regexp
+from wtforms.validators import DataRequired, Length, NumberRange, Regexp
 import config as app_config
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -175,8 +175,11 @@ class OrderLead(db.Model):
     nom_prenom = db.Column(db.String(120), nullable=False)
     telephone = db.Column(db.String(30), nullable=False)
 
+    ville = db.Column(db.String(120), nullable=True)
+    adresse_complete = db.Column(db.String(500), nullable=True)
+
     zone_livraison = db.Column(db.String(30), nullable=False, default="conakry")  # conakry|outside
-    adresse_hors_conakry = db.Column(db.String(240), nullable=True)
+    adresse_hors_conakry = db.Column(db.String(240), nullable=True)  # anciennes commandes uniquement
 
     payment_method = db.Column(db.String(30), nullable=False)  # cash|mobile_money
 
@@ -193,8 +196,25 @@ class OrderLead(db.Model):
     utm_term = db.Column(db.String(120), nullable=True)
 
 
+def _migrate_order_leads_columns() -> None:
+    """Ajoute ville / adresse_complete si la table existait sans ces colonnes (SQLite ou PostgreSQL)."""
+    try:
+        insp = inspect(db.engine)
+        if not insp.has_table("order_leads"):
+            return
+        cols = {c["name"] for c in insp.get_columns("order_leads")}
+    except Exception:
+        return
+    with db.engine.begin() as conn:
+        if "ville" not in cols:
+            conn.execute(text("ALTER TABLE order_leads ADD COLUMN ville VARCHAR(120)"))
+        if "adresse_complete" not in cols:
+            conn.execute(text("ALTER TABLE order_leads ADD COLUMN adresse_complete VARCHAR(500)"))
+
+
 with app.app_context():
     db.create_all()
+    _migrate_order_leads_columns()
 
 
 class CartAddForm(FlaskForm):
@@ -207,9 +227,9 @@ class CartUpdateForm(FlaskForm):
 
 
 class CheckoutForm(FlaskForm):
-    nom_prenom = StringField("Nom et prenom", validators=[DataRequired(), Length(max=120)])
+    nom_prenom = StringField("Nom complet", validators=[DataRequired(), Length(max=120)])
     telephone = TelField(
-        "Numero de telephone",
+        "Téléphone (WhatsApp si possible)",
         filters=[lambda x: "".join((x or "").split()) if x is not None else None],
         validators=[
             DataRequired(),
@@ -217,6 +237,7 @@ class CheckoutForm(FlaskForm):
             Length(max=30),
         ],
     )
+    ville = StringField("Ville", validators=[DataRequired(), Length(max=120)])
 
     zone_livraison = RadioField(
         "Zone de livraison",
@@ -224,7 +245,10 @@ class CheckoutForm(FlaskForm):
         default="conakry",
         validators=[DataRequired()],
     )
-    adresse_hors_conakry = TextAreaField("Adresse (obligatoire si Hors Conakry)", validators=[Optional(), Length(max=240)])
+    adresse_complete = TextAreaField(
+        "Adresse complète (quartier, commune, point de repère)",
+        validators=[DataRequired(), Length(max=500)],
+    )
 
     payment_method = RadioField(
         "Moyen de paiement a la reception",
@@ -239,12 +263,7 @@ class CheckoutForm(FlaskForm):
     utm_term = HiddenField()
 
     def validate(self, extra_validators=None):
-        ok = super().validate(extra_validators=extra_validators)
-        if not ok:
-            return False
-        # Hors Conakry : livraison à la charge du client.
-        # On ne force pas l'adresse (tu as demandé seulement Nom + Téléphone).
-        return True
+        return super().validate(extra_validators=extra_validators)
 
 
 @app.context_processor
@@ -462,8 +481,10 @@ def checkout():
             status="new",
             nom_prenom=form.nom_prenom.data.strip(),
             telephone=form.telephone.data.strip(),
+            ville=form.ville.data.strip(),
+            adresse_complete=(form.adresse_complete.data or "").strip(),
             zone_livraison=form.zone_livraison.data,
-            adresse_hors_conakry=(form.adresse_hors_conakry.data or "").strip() or None,
+            adresse_hors_conakry=None,
             payment_method=form.payment_method.data,
             items_json=json.dumps(items_payload, ensure_ascii=False),
             subtotal_gnf=subtotal,
