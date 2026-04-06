@@ -110,6 +110,17 @@ class Listing(db.Model):
     user = db.relationship("User", backref=db.backref("listings", lazy="dynamic"))
 
 
+class ListingImage(db.Model):
+    __tablename__ = "listing_images"
+
+    id = db.Column(db.Integer, primary_key=True)
+    listing_id = db.Column(db.Integer, db.ForeignKey("listings.id"), nullable=False, index=True)
+    filename = db.Column(db.String(280), nullable=False)
+    sort_order = db.Column(db.Integer, nullable=False, default=0)
+    created_at = db.Column(db.DateTime, default=utcnow)
+    listing = db.relationship("Listing", backref=db.backref("images", lazy="dynamic"))
+
+
 class ListingComment(db.Model):
     __tablename__ = "listing_comments"
 
