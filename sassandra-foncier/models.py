@@ -82,6 +82,18 @@ class AdminRequest(db.Model):
     user = db.relationship("User", backref=db.backref("requests", lazy="dynamic"))
 
 
+class CompanyProfile(db.Model):
+    __tablename__ = "company_profiles"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), unique=True, nullable=False)
+    company_name = db.Column(db.String(200), nullable=False)
+    siege = db.Column(db.String(300), nullable=False)
+    ville = db.Column(db.String(120), nullable=False)
+    registre_commerce = db.Column(db.String(120), nullable=False)
+    user = db.relationship("User", backref=db.backref("company_profile", uselist=False))
+
+
 class Listing(db.Model):
     __tablename__ = "listings"
 
@@ -96,6 +108,31 @@ class Listing(db.Model):
     status = db.Column(db.String(30), nullable=False, default="pending_validation")
     created_at = db.Column(db.DateTime, default=utcnow)
     user = db.relationship("User", backref=db.backref("listings", lazy="dynamic"))
+
+
+class ListingComment(db.Model):
+    __tablename__ = "listing_comments"
+
+    id = db.Column(db.Integer, primary_key=True)
+    listing_id = db.Column(db.Integer, db.ForeignKey("listings.id"), nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    body = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=utcnow)
+    listing = db.relationship("Listing", backref=db.backref("comments", lazy="dynamic"))
+    user = db.relationship("User", backref=db.backref("listing_comments_posted", lazy="dynamic"))
+
+
+class ListingLike(db.Model):
+    __tablename__ = "listing_likes"
+
+    id = db.Column(db.Integer, primary_key=True)
+    listing_id = db.Column(db.Integer, db.ForeignKey("listings.id"), nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    created_at = db.Column(db.DateTime, default=utcnow)
+    listing = db.relationship("Listing", backref=db.backref("likes", lazy="dynamic"))
+    user = db.relationship("User", backref=db.backref("listing_likes_given", lazy="dynamic"))
+
+    __table_args__ = (db.UniqueConstraint("listing_id", "user_id", name="uq_listing_like_user"),)
 
 
 class AuditLog(db.Model):
