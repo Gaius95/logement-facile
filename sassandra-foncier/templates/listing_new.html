@@ -2,7 +2,13 @@
 {% block title %}Nouvelle annonce — {{ app_name }}{% endblock %}
 {% block content %}
 <h1 class="page-title">Deposer une annonce</h1>
-<p class="page-lead">Soumission pour validation par un agent.</p>
+<p class="page-lead">
+  {% if current_user and current_user.role == 'company' %}
+  Compte entreprise : vous pouvez publier plusieurs biens. Chaque annonce est soumise pour validation par un agent avant publication.
+  {% else %}
+  Soumission pour validation par un agent.
+  {% endif %}
+</p>
 <form method="post" class="card-panel form-grid" style="max-width:560px;">
   <div>
     <label for="title">Titre du bien</label>
