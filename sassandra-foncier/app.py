@@ -715,3 +715,7 @@ def admin_stats():
 with app.app_context():
     db.create_all()
     seed_if_empty()
+    try:
+        ensure_listing_upload_dir()
+    except OSError as exc:
+        app.logger.warning("Dossier uploads annonces non cree: %s", exc)
