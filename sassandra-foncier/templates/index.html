@@ -21,6 +21,7 @@
         <a href="{{ url_for('search_hub') }}">Recherche</a>
         <a href="{{ url_for('map_sig') }}">Carte</a>
         <a href="{{ url_for('listings_list') }}">Vente</a>
+        <a href="{{ url_for('enterprise_hub') }}">Entreprise</a>
         <a href="{{ url_for('a_propos') }}">À propos</a>
         {% if current_user %}
           <a href="{{ url_for('requests_list') }}">Mes demandes</a>
@@ -69,15 +70,18 @@
   </main>
 
   <section class="trust-strip">
-    <div class="container trust-inner">
+    <div class="container trust-inner trust-inner--4">
       <a class="trust-item" href="{{ url_for('search_hub') }}" style="text-decoration:none;color:inherit;display:block;">
-        <strong>Recherche</strong><span>par identifiant, carte ou commune</span>
+        <strong>Recherche</strong><span>identifiant, carte, suivi</span>
       </a>
       <a class="trust-item" href="{{ url_for('map_sig') }}" style="text-decoration:none;color:inherit;display:block;">
         <strong>Carte</strong><span>vue SIG interactive</span>
       </a>
-      <a class="trust-item" href="{{ url_for('requests_list') if current_user else url_for('auth_login') }}" style="text-decoration:none;color:inherit;display:block;">
+      <a class="trust-item" href="{{ url_for('requests_list') if current_user else url_for('auth_login', next=url_for('requests_list')) }}" style="text-decoration:none;color:inherit;display:block;">
         <strong>Demandes</strong><span>suivi de dossier</span>
+      </a>
+      <a class="trust-item trust-item--accent" href="{{ url_for('enterprise_hub') }}" style="text-decoration:none;color:inherit;display:block;">
+        <strong>Entreprise</strong><span>immobilier &amp; annonces</span>
       </a>
     </div>
   </section>
