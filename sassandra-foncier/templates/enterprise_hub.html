@@ -1,0 +1,27 @@
+{% extends "layout_inner.html" %}
+{% block title %}Entreprise immobilière — {{ app_name }}{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Entreprise immobilière</h1>
+<p class="page-lead">
+  Les professionnels de l’immobilier disposent d’un espace dédié pour publier leurs biens et échanger avec les
+  visiteurs (commentaires, mentions J’aime).
+</p>
+<div class="card-panel">
+  <p><strong>Inscription entreprise</strong> : nom de l’entreprise, email, téléphone, siège, ville, registre de
+    commerce, puis mot de passe. Après validation de vos annonces par la plateforme, elles sont visibles par tous.</p>
+  <p class="muted" style="margin-bottom:0;">
+    Les comptes particuliers restent disponibles via « Inscription » classique dans la barre de navigation.
+  </p>
+</div>
+<div class="hero-actions" style="flex-wrap:wrap;">
+  <a class="btn btn-primary" href="{{ url_for('enterprise_register') }}">Créer un compte entreprise</a>
+  <a class="btn btn-ghost" href="{{ url_for('auth_login') }}">Connexion</a>
+  <a class="btn btn-ghost" href="{{ url_for('listings_list') }}">Voir les annonces</a>
+</div>
+{% if current_user and current_user.role == 'company' %}
+<p style="margin-top:24px;">
+  <a class="btn btn-primary" href="{{ url_for('listing_new') }}">Publier une annonce</a>
+</p>
+{% endif %}
+{% endblock %}
