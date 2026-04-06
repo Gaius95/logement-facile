@@ -7,6 +7,16 @@
   {{ listing.status }}
 </p>
 
+{% if listing_image_urls %}
+<div class="listing-gallery" aria-label="Photos du bien">
+  {% for url in listing_image_urls %}
+  <a href="{{ url }}" target="_blank" rel="noopener noreferrer" class="listing-gallery__item">
+    <img src="{{ url }}" alt="Photo {{ loop.index }} — {{ listing.title }}" loading="lazy" />
+  </a>
+  {% endfor %}
+</div>
+{% endif %}
+
 <div class="card-panel">
   <p class="muted" style="margin-top:0;font-size:0.92rem;">Publié par <strong>{{ publisher_label }}</strong></p>
   {% if listing.user.company_profile %}
@@ -14,6 +24,12 @@
     <li><strong>Siège</strong> : {{ listing.user.company_profile.siege }}</li>
     <li><strong>Ville</strong> : {{ listing.user.company_profile.ville }}</li>
     <li><strong>RCC</strong> : {{ listing.user.company_profile.registre_commerce }}</li>
+    {% if listing.user.phone %}<li><strong>Téléphone</strong> : {{ listing.user.phone }}</li>{% endif %}
+    {% if listing.user.email %}<li><strong>Email</strong> : <a href="mailto:{{ listing.user.email }}">{{ listing.user.email }}</a></li>{% endif %}
+  </ul>
+  {% elif listing.user.phone or listing.user.email %}
+  <ul class="company-meta">
+    <li class="muted" style="list-style:none;margin-left:0;padding-left:0;"><strong>Contact annonceur</strong></li>
     {% if listing.user.phone %}<li><strong>Téléphone</strong> : {{ listing.user.phone }}</li>{% endif %}
     {% if listing.user.email %}<li><strong>Email</strong> : <a href="mailto:{{ listing.user.email }}">{{ listing.user.email }}</a></li>{% endif %}
   </ul>
@@ -40,15 +56,17 @@
     <a class="btn btn-ghost" href="{{ url_for('auth_login', next=request.path) }}">♡ J’aime ({{ like_count }}) — connectez-vous</a>
     {% endif %}
   </div>
-  <h2 class="listing-social__title">Échanger avec {{ publisher_label }}</h2>
-  <p class="muted" style="margin-top:0;font-size:0.9rem;">Commentez publiquement cette annonce. Pour un échange privé, utilisez les coordonnées ci-dessus lorsque l’entreprise les a renseignées.</p>
+  <h2 class="listing-social__title">Discuter avec {{ publisher_label }}</h2>
+  <p class="muted" style="margin-top:0;font-size:0.9rem;">
+    Utilisez les commentaires ci-dessous pour échanger publiquement. Vous pouvez aussi contacter l’annonceur par téléphone ou email lorsque ces coordonnées sont affichées.
+  </p>
   {% if current_user %}
   <form method="post" action="{{ url_for('listing_comment', listing_id=listing.id) }}" class="form-grid" style="gap:10px;">
     <div>
-      <label for="body">Votre commentaire</label>
-      <textarea id="body" name="body" rows="3" required placeholder="Votre message…"></textarea>
+      <label for="body">Votre message</label>
+      <textarea id="body" name="body" rows="3" required placeholder="Votre question ou commentaire…"></textarea>
     </div>
-    <button type="submit" class="btn btn-primary" style="justify-self:start;">Publier le commentaire</button>
+    <button type="submit" class="btn btn-primary" style="justify-self:start;">Publier</button>
   </form>
   {% else %}
   <p><a href="{{ url_for('auth_login', next=request.path) }}">Connectez-vous</a> pour commenter.</p>
@@ -59,9 +77,7 @@
     <li class="comment-item">
       <div class="comment-item__header">
         <strong>{% if c.user.company_profile %}{{ c.user.company_profile.company_name }}{% else %}{{ c.user.full_name }}{% endif %}</strong>
-        <span class="muted">{{ c.created_at.strftime('%d/%m/%Y %H:%M') }}
-
-        </span>
+        <span class="muted">{{ c.created_at.strftime('%d/%m/%Y %H:%M') }}</span>
       </div>
       <p style="white-space:pre-wrap;margin:8px 0 0;">{{ c.body }}</p>
     </li>
