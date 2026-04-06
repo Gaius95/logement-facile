@@ -16,23 +16,21 @@
   <div class="file-upload-block">
     <p class="file-upload-block__label">Photos du bien — obligatoire</p>
     <p class="muted" style="margin:0 0 10px;font-size:0.9rem;">
-      Formats : JPG, PNG, WEBP ou GIF. Vous pouvez en choisir plusieurs (Ctrl ou Cmd + clic).
+      Formats : JPG, PNG, WEBP ou GIF. Plusieurs fichiers : Ctrl ou Cmd + clic (ordinateur).
     </p>
-    <label class="file-upload-box">
+    <div class="file-upload-box">
+      <label class="file-upload-box__cta" for="images">Ajouter des photos</label>
       <input
         id="images"
-        class="file-upload-box__input"
+        class="file-upload-visible"
         name="images"
         type="file"
-        accept="image/jpeg,image/png,image/webp,image/gif,.jpg,.jpeg,.png,.webp,.gif"
+        accept="image/jpeg,image/png,image/webp,image/gif,image/*"
         multiple
         aria-label="Photos du bien, au moins une image"
       />
-      <span class="file-upload-box__face">
-        <span class="file-upload-box__title">Choisir des fichiers</span>
-        <span class="file-upload-box__hint">touchez ou cliquez toute cette zone orange</span>
-      </span>
-    </label>
+      <p class="file-upload-box__hint muted">Utilisez le bouton « Parcourir » / « Fichier » ci-dessus (champ natif du navigateur).</p>
+    </div>
     <p id="fileListHint" class="file-upload-names muted" aria-live="polite"></p>
   </div>
 
