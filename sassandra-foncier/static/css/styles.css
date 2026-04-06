@@ -623,6 +623,69 @@ table.data th {
   z-index: 1;
 }
 
+.map-embed--large {
+  height: min(72vh, 640px);
+  min-height: 480px;
+}
+
+.map-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  background: var(--white);
+  border: 1px solid var(--ring-green-soft);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 16px rgba(27, 94, 32, 0.06);
+}
+
+.map-toolbar__label {
+  font-weight: 700;
+  color: var(--green);
+  font-size: 0.95rem;
+}
+
+.map-toolbar__btn {
+  padding: 10px 16px;
+  border-radius: 999px;
+  border: 2px solid var(--ring-green);
+  background: var(--bg-page);
+  color: var(--text);
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.map-toolbar__btn:hover {
+  border-color: var(--orange);
+  color: var(--orange-deep);
+}
+
+.map-toolbar__btn.is-active {
+  background: linear-gradient(135deg, var(--orange), var(--orange-deep));
+  border-color: transparent;
+  color: var(--white);
+  box-shadow: var(--shadow-orange);
+}
+
+.map-toolbar__btn.is-active:hover {
+  filter: brightness(1.03);
+  color: var(--white);
+}
+
+/* Leaflet : contrôles au-dessus du fond */
+.leaflet-container {
+  font-family: inherit;
+}
+
+.leaflet-control-scale-line {
+  border-color: var(--green-mid) !important;
+}
+
 .admin-subnav {
   display: flex;
   flex-wrap: wrap;
