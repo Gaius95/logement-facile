@@ -7,3 +7,6 @@ HERO_IMAGES = [
 HERO_INTERVAL_MS = 5000
 
 APP_NAME = "Sassandra Foncier"
+
+# Logo en-tête (La Nawa) : placer le fichier sous static/images/
+BRAND_LOGO = "images/logo-la-nawa.png"
