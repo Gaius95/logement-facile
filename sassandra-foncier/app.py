@@ -3,6 +3,7 @@ import io
 import json
 import os
 import secrets
+import shutil
 from datetime import datetime, timezone
 from functools import wraps
 
@@ -28,6 +29,7 @@ from models import (
     LandTitle,
     Listing,
     ListingComment,
+    ListingImage,
     ListingLike,
     Parcel,
     ParcelHistory,
@@ -37,6 +39,30 @@ from models import (
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 INSTANCE_DIR = os.path.join(BASE_DIR, "instance")
+
+LISTING_UPLOAD_REL = "uploads/listings"
+ALLOWED_LISTING_IMAGES = frozenset({"png", "jpg", "jpeg", "webp", "gif"})
+
+
+def ensure_listing_upload_dir() -> None:
+    path = os.path.join(BASE_DIR, "static", LISTING_UPLOAD_REL.replace("/", os.sep))
+    os.makedirs(path, exist_ok=True)
+
+
+def collect_valid_listing_uploads(files_storage):
+    """Return [(FileStorage, extension_lower), ...] for valid image files."""
+    out = []
+    for f in files_storage:
+        if not f or not f.filename:
+            continue
+        name = f.filename
+        if "." not in name:
+            continue
+        ext = name.rsplit(".", 1)[-1].lower()
+        if ext not in ALLOWED_LISTING_IMAGES:
+            continue
+        out.append((f, ext))
+    return out
 
 
 def _database_url() -> str:
@@ -69,6 +95,7 @@ app = Flask(__name__, static_folder="static", template_folder="templates")
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-sassandra-change-me")
 app.config["SQLALCHEMY_DATABASE_URI"] = _database_url()
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["MAX_CONTENT_LENGTH"] = 25 * 1024 * 1024
 
 db.init_app(app)
 
@@ -183,6 +210,20 @@ def seed_if_empty():
         status="published",
     )
     db.session.add(lst)
+    db.session.flush()
+    ensure_listing_upload_dir()
+    hero_demo = os.path.join(BASE_DIR, "static", "hero", "01-bassin-ci.png")
+    if os.path.isfile(hero_demo):
+        dst_name = f"{lst.id}_seed.png"
+        dst_path = os.path.join(BASE_DIR, "static", LISTING_UPLOAD_REL.replace("/", os.sep), dst_name)
+        shutil.copy2(hero_demo, dst_path)
+        db.session.add(
+            ListingImage(
+                listing_id=lst.id,
+                filename=f"{LISTING_UPLOAD_REL}/{dst_name}",
+                sort_order=0,
+            )
+        )
     log_audit(agent.id, "seed", "system", None, "Donnees initiales")
     db.session.commit()
 
@@ -447,7 +488,18 @@ def map_sig():
 @app.route("/vente")
 def listings_list():
     lst = Listing.query.filter(Listing.status == "published").order_by(Listing.created_at.desc()).all()
-    return render_template("listings_list.html", listings=lst)
+    first_thumb = {}
+    if lst:
+        ids = [x.id for x in lst]
+        imgs = (
+            ListingImage.query.filter(ListingImage.listing_id.in_(ids))
+            .order_by(ListingImage.listing_id, ListingImage.sort_order)
+            .all()
+        )
+        for im in imgs:
+            if im.listing_id not in first_thumb:
+                first_thumb[im.listing_id] = url_for("static", filename=im.filename)
+    return render_template("listings_list.html", listings=lst, first_thumb=first_thumb)
 
 
 @app.route("/vente/nouvelle", methods=["GET", "POST"])
@@ -470,8 +522,12 @@ def listing_new():
             lng_f = float(lng) if lng else None
         except ValueError:
             lat_f = lng_f = None
+        ensure_listing_upload_dir()
+        staged = collect_valid_listing_uploads(request.files.getlist("images"))
         if not title:
             flash("Titre requis.", "error")
+        elif not staged:
+            flash("Ajoutez au moins une photo du bien (JPG, PNG, WEBP ou GIF).", "error")
         else:
             l = Listing(
                 user_id=uid,
@@ -484,9 +540,16 @@ def listing_new():
                 status="pending_validation",
             )
             db.session.add(l)
-            log_audit(uid, "annonce creee", "Listing", None, title)
+            db.session.flush()
+            for i, (f, ext) in enumerate(staged):
+                fn = f"{l.id}_{secrets.token_hex(8)}.{ext}"
+                rel = f"{LISTING_UPLOAD_REL}/{fn}".replace("\\", "/")
+                abs_path = os.path.join(BASE_DIR, "static", *rel.split("/"))
+                f.save(abs_path)
+                db.session.add(ListingImage(listing_id=l.id, filename=rel, sort_order=i))
+            log_audit(uid, "annonce creee", "Listing", str(l.id), title)
             db.session.commit()
-            flash("Annonce soumise pour validation.", "success")
+            flash("Annonce et photos enregistrees. Validation par un agent avant publication.", "success")
             return redirect(url_for("listings_list"))
     return render_template("listing_new.html")
 
@@ -513,6 +576,12 @@ def listing_detail(listing_id):
         if getattr(publisher, "company_profile", None)
         else publisher.full_name
     )
+    imgs = (
+        ListingImage.query.filter_by(listing_id=l.id)
+        .order_by(ListingImage.sort_order, ListingImage.id)
+        .all()
+    )
+    listing_image_urls = [url_for("static", filename=im.filename) for im in imgs]
     return render_template(
         "listing_detail.html",
         listing=l,
@@ -520,6 +589,7 @@ def listing_detail(listing_id):
         like_count=like_count,
         user_liked=user_liked,
         publisher_label=publisher_label,
+        listing_image_urls=listing_image_urls,
     )
 
 
@@ -582,7 +652,16 @@ def admin_agents():
 @role_required("admin", "agent")
 def admin_validation():
     pending = Listing.query.filter_by(status="pending_validation").order_by(Listing.created_at.desc()).all()
-    return render_template("admin_validation.html", listings=pending)
+    thumbs = {}
+    for row in pending:
+        im = (
+            ListingImage.query.filter_by(listing_id=row.id)
+            .order_by(ListingImage.sort_order, ListingImage.id)
+            .first()
+        )
+        if im:
+            thumbs[row.id] = url_for("static", filename=im.filename)
+    return render_template("admin_validation.html", listings=pending, thumbs=thumbs)
 
 
 @app.route("/admin/validation/<int:listing_id>/publier", methods=["POST"])
