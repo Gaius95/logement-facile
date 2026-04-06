@@ -5,10 +5,16 @@
 <h1 class="page-title">Validation des annonces</h1>
 {% if listings %}
   {% for l in listings %}
-    <div class="card-panel" style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;">
-      <div>
+    <div class="card-panel admin-listing-row">
+      {% if l.id in thumbs %}
+      <a href="{{ url_for('listing_detail', listing_id=l.id) }}" class="admin-listing-row__thumb">
+        <img src="{{ thumbs[l.id] }}" alt="" loading="lazy" />
+      </a>
+      {% endif %}
+      <div class="admin-listing-row__main">
         <strong>{{ l.title }}</strong>
         <p class="muted" style="margin:4px 0 0;">{{ l.price_cfa }} FCFA · {{ l.created_at.strftime('%d/%m/%Y') }}</p>
+        <p style="margin:8px 0 0;"><a href="{{ url_for('listing_detail', listing_id=l.id) }}">Voir le détail et les photos</a></p>
       </div>
       <form method="post" action="{{ url_for('admin_publish_listing', listing_id=l.id) }}">
         <button type="submit" class="btn btn-primary">Publier</button>
