@@ -1,14 +1,25 @@
-/* Sassandra Foncier — thème clair, accents océan / sable */
+/* Sassandra Foncier — blanc, vert et orange (identité La Nawa) */
 
 :root {
-  --bg-page: #f6f9fc;
-  --text: #153243;
-  --text-muted: #4a6670;
-  --brand: #0d7c90;
-  --brand-deep: #0a5f6f;
-  --accent: #e8b86d;
+  --green: #1b5e20;
+  --green-mid: #2e7d32;
+  --green-soft: #e8f5e9;
+  --green-muted: #c8e6c9;
+  --orange: #f57c00;
+  --orange-deep: #e65100;
+  --orange-soft: #fff3e0;
+
+  --bg-page: #fafdfb;
+  --text: #1a2f1f;
+  --text-muted: #4a6356;
+  --brand: var(--orange);
+  --brand-deep: var(--green);
+  --accent: #ff9800;
   --white: #ffffff;
-  --shadow: 0 20px 50px rgba(13, 36, 48, 0.12);
+  --shadow: 0 20px 50px rgba(27, 94, 32, 0.1);
+  --shadow-orange: 0 8px 24px rgba(230, 81, 0, 0.28);
+  --ring-green: rgba(46, 125, 50, 0.18);
+  --ring-green-soft: rgba(46, 125, 50, 0.1);
   --radius: 16px;
   --header-h: 120px;
 }
@@ -71,7 +82,7 @@ a {
 }
 
 .hero-bg-placeholder {
-  background: linear-gradient(135deg, #c8e6f0 0%, #e8f4e8 45%, #fdf6e3 100%);
+  background: linear-gradient(135deg, #e8f5e9 0%, #ffffff 45%, #fff3e0 100%);
 }
 
 .hero-bg-scrim {
@@ -80,9 +91,9 @@ a {
   z-index: 2;
   background: linear-gradient(
     105deg,
-    rgba(255, 255, 255, 0.92) 0%,
-    rgba(255, 255, 255, 0.78) 38%,
-    rgba(246, 252, 255, 0.55) 100%
+    rgba(255, 255, 255, 0.94) 0%,
+    rgba(232, 245, 233, 0.72) 42%,
+    rgba(255, 243, 224, 0.5) 100%
   );
   pointer-events: none;
 }
@@ -142,7 +153,7 @@ a {
 
 .nav a:not(.btn-nav):hover {
   color: var(--brand-deep);
-  background: rgba(13, 124, 144, 0.08);
+  background: rgba(46, 125, 50, 0.1);
 }
 
 .btn-nav {
@@ -150,9 +161,9 @@ a {
   font-weight: 700;
   font-size: 0.95rem;
   border-radius: 999px;
-  background: linear-gradient(135deg, var(--brand), #12a0b8);
+  background: linear-gradient(135deg, var(--orange), var(--orange-deep));
   color: var(--white);
-  box-shadow: 0 8px 24px rgba(13, 124, 144, 0.35);
+  box-shadow: var(--shadow-orange);
 }
 
 .btn-nav:hover {
@@ -182,7 +193,7 @@ a {
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--brand);
+  color: var(--green-mid);
 }
 
 .hero-copy h1 {
@@ -239,24 +250,25 @@ a {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--brand), #12a0b8);
+  background: linear-gradient(135deg, var(--orange), var(--orange-deep));
   color: var(--white);
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-orange);
 }
 
 .btn-primary:hover {
-  box-shadow: 0 12px 32px rgba(13, 124, 144, 0.35);
+  box-shadow: 0 12px 32px rgba(230, 81, 0, 0.4);
 }
 
 .btn-ghost {
-  background: rgba(255, 255, 255, 0.85);
-  border-color: rgba(13, 124, 144, 0.25);
-  color: var(--brand-deep);
+  background: rgba(255, 255, 255, 0.95);
+  border-color: var(--ring-green);
+  color: var(--green);
 }
 
 .btn-ghost:hover {
   background: var(--white);
-  border-color: var(--brand);
+  border-color: var(--green-mid);
+  color: var(--orange-deep);
 }
 
 .hero-dots {
@@ -281,17 +293,17 @@ a {
 }
 
 .trust-item {
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid rgba(13, 124, 144, 0.12);
+  background: var(--white);
+  border: 1px solid var(--ring-green-soft);
   border-radius: var(--radius);
   padding: 16px 18px;
-  box-shadow: 0 8px 28px rgba(13, 36, 48, 0.06);
+  box-shadow: 0 8px 28px rgba(27, 94, 32, 0.06);
 }
 
 .trust-item strong {
   display: block;
   font-size: 1rem;
-  color: var(--brand-deep);
+  color: var(--green);
   margin-bottom: 4px;
 }
 
@@ -324,9 +336,9 @@ body {
   position: sticky;
   top: 0;
   z-index: 30;
-  background: rgba(255, 255, 255, 0.95);
-  border-bottom: 1px solid rgba(13, 124, 144, 0.12);
-  box-shadow: 0 4px 20px rgba(13, 36, 48, 0.04);
+  background: rgba(255, 255, 255, 0.97);
+  border-bottom: 1px solid var(--ring-green-soft);
+  box-shadow: 0 4px 20px rgba(27, 94, 32, 0.06);
 }
 
 .page-inner {
@@ -368,9 +380,9 @@ body {
 
 .btn-nav--ghost {
   background: transparent !important;
-  color: var(--brand-deep) !important;
+  color: var(--green) !important;
   box-shadow: none !important;
-  border: 1px solid rgba(13, 124, 144, 0.3);
+  border: 1px solid var(--ring-green);
 }
 
 .flash-stack {
@@ -384,8 +396,8 @@ body {
   padding: 12px 16px;
   border-radius: 12px;
   font-weight: 600;
-  border: 1px solid rgba(13, 124, 144, 0.15);
-  background: #fff;
+  border: 1px solid var(--ring-green-soft);
+  background: var(--white);
 }
 
 .flash-success {
@@ -399,17 +411,18 @@ body {
 }
 
 .flash-info {
-  border-color: rgba(59, 130, 246, 0.35);
-  color: #1e40af;
+  border-color: rgba(46, 125, 50, 0.35);
+  color: var(--green);
+  background: var(--green-soft);
 }
 
 .card-panel {
-  background: #fff;
-  border: 1px solid rgba(13, 124, 144, 0.12);
+  background: var(--white);
+  border: 1px solid var(--ring-green-soft);
   border-radius: var(--radius);
   padding: 20px 22px;
   margin-bottom: 16px;
-  box-shadow: 0 8px 28px rgba(13, 36, 48, 0.05);
+  box-shadow: 0 8px 28px rgba(27, 94, 32, 0.05);
 }
 
 .grid-3 {
@@ -428,10 +441,10 @@ body {
   display: block;
   padding: 18px;
   border-radius: var(--radius);
-  border: 1px solid rgba(13, 124, 144, 0.15);
-  background: #fff;
+  border: 1px solid var(--ring-green);
+  background: var(--white);
   font-weight: 700;
-  color: var(--brand-deep);
+  color: var(--green);
   transition: box-shadow 0.2s ease, transform 0.12s ease;
 }
 
@@ -481,7 +494,7 @@ select {
   width: 100%;
   padding: 12px 14px;
   border-radius: 12px;
-  border: 1px solid rgba(13, 124, 144, 0.2);
+  border: 1px solid var(--ring-green);
   font-family: inherit;
   font-size: 1rem;
 }
@@ -504,13 +517,14 @@ table.data {
 table.data th,
 table.data td {
   padding: 10px 12px;
-  border: 1px solid rgba(13, 124, 144, 0.12);
+  border: 1px solid var(--ring-green-soft);
   text-align: left;
 }
 
 table.data th {
-  background: #f0f7f9;
+  background: var(--green-soft);
   font-weight: 700;
+  color: var(--green);
 }
 
 .muted {
@@ -520,7 +534,7 @@ table.data th {
 .map-embed {
   height: 420px;
   border-radius: var(--radius);
-  border: 1px solid rgba(13, 124, 144, 0.15);
+  border: 1px solid var(--ring-green);
   z-index: 1;
 }
 
@@ -534,15 +548,15 @@ table.data th {
 .admin-subnav a {
   padding: 8px 14px;
   border-radius: 999px;
-  background: #fff;
-  border: 1px solid rgba(13, 124, 144, 0.2);
+  background: var(--white);
+  border: 1px solid var(--ring-green);
   font-weight: 600;
   font-size: 0.9rem;
 }
 
 .admin-subnav a:hover {
-  border-color: var(--brand);
-  color: var(--brand-deep);
+  border-color: var(--orange);
+  color: var(--orange-deep);
 }
 
 .prose-block {
