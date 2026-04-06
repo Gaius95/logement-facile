@@ -701,3 +701,136 @@ table.data th {
 .prose-block .btn {
   margin-top: 8px;
 }
+
+/* Annonces — galerie & fil */
+.listing-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.listing-gallery__item {
+  display: block;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--ring-green-soft);
+  aspect-ratio: 4 / 3;
+  background: var(--green-soft);
+}
+
+.listing-gallery__item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.2s ease;
+}
+
+.listing-gallery__item:hover img {
+  transform: scale(1.03);
+}
+
+.listing-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.listing-card {
+  display: grid;
+  grid-template-columns: minmax(140px, 220px) 1fr;
+  gap: 18px;
+  align-items: stretch;
+  background: var(--white);
+  border: 1px solid var(--ring-green-soft);
+  border-radius: var(--radius);
+  padding: 16px;
+  box-shadow: 0 8px 28px rgba(27, 94, 32, 0.05);
+}
+
+.listing-card__media {
+  display: block;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--green-soft);
+  min-height: 120px;
+}
+
+.listing-card__media img {
+  width: 100%;
+  height: 100%;
+  min-height: 120px;
+  object-fit: cover;
+  display: block;
+}
+
+.listing-card__placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.listing-card__title {
+  margin: 0 0 6px;
+  font-size: 1.15rem;
+  font-family: "Fraunces", Georgia, serif;
+}
+
+.listing-card__title a {
+  color: var(--green);
+}
+
+.listing-card__meta {
+  margin: 0 0 8px;
+  font-size: 0.92rem;
+}
+
+.listing-card__excerpt {
+  margin: 0 0 12px;
+  line-height: 1.5;
+  font-size: 0.95rem;
+}
+
+@media (max-width: 640px) {
+  .listing-card {
+    grid-template-columns: 1fr;
+  }
+
+  .listing-card__media {
+    max-height: 200px;
+  }
+}
+
+.admin-listing-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+}
+
+.admin-listing-row__thumb {
+  flex: 0 0 100px;
+  width: 100px;
+  height: 72px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--ring-green-soft);
+  background: var(--green-soft);
+}
+
+.admin-listing-row__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.admin-listing-row__main {
+  flex: 1;
+  min-width: 200px;
+}
