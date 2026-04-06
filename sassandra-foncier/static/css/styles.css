@@ -911,30 +911,42 @@ table.data th {
 
 .file-upload-box {
   position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
   border: 2px dashed rgba(245, 124, 0, 0.55);
   border-radius: 14px;
   background: linear-gradient(180deg, #fff8f0 0%, #ffffff 100%);
   min-height: 120px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   padding: 16px;
+  cursor: pointer;
+  box-sizing: border-box;
 }
 
+/* Champ hors écran mais activable par le <label> (clic sur toute la zone) */
 .file-upload-box__input {
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
   opacity: 0;
-  cursor: pointer;
-  z-index: 2;
+}
+
+.file-upload-box:focus-within {
+  outline: 2px solid var(--orange);
+  outline-offset: 2px;
 }
 
 .file-upload-box__face {
-  pointer-events: none;
   text-align: center;
   padding: 8px;
+  pointer-events: none;
 }
 
 .file-upload-box__title {
