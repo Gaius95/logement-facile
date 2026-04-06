@@ -9,6 +9,7 @@
 <p class="page-lead">
   <strong>Vue végétation & relief</strong> : imagerie satellite (zoom limité pour éviter les zones sans image et le flou).
   <strong>Vue urbanisation</strong> : plan OpenStreetMap très lisible (routes, bâtiments, noms).
+  Ouverture par défaut à l’<strong>échelle ~100&nbsp;m</strong> (barre d’échelle en bas à gauche).
 </p>
 <div class="map-toolbar" role="group" aria-label="Fond de carte">
   <span class="map-toolbar__label">Vue :</span>
@@ -32,9 +33,11 @@
   var parcels = {{ parcels_json|safe }};
   var focusId = {{ focus_public_id|tojson }};
 
-  /* Zoom satellite : maxNativeZoom = maxZoom évite l'agrandissement flou des tuiles.
-     En zone rurale (ex. Nawa), Esri n'a souvent pas d'image au-delà de z≈17–18 : au-delà = gris « Map data not yet available ». */
-  var ZOOM_SAT_MAX = 17;
+  /* Échelle ~100 m (barre d’échelle) ≈ zoom 18 vers latitude Sassandra (~5°). */
+  var ZOOM_100M = 18;
+
+  /* Satellite : même plafond que l’échelle 100 m pour rester net (pas d’upscale). Si tu vois des tuiles grises, passe à 17. */
+  var ZOOM_SAT_MAX = ZOOM_100M;
 
   var attributionSat =
     'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics | ' +
@@ -66,7 +69,7 @@
     zoomControl: true,
     scrollWheelZoom: true,
     maxZoom: ZOOM_SAT_MAX
-  }).setView([4.95, -6.08], 14);
+  }).setView([4.95, -6.08], ZOOM_100M);
 
   L.control.scale({ metric: true, imperial: false, maxWidth: 220 }).addTo(map);
 
@@ -104,7 +107,7 @@
     var m = L.marker([p.lat, p.lng]).addTo(map);
     m.bindPopup('<a href="/parcelle/' + encodeURIComponent(p.id) + '">' + p.id + '</a>');
     if (focusId && p.id === focusId) {
-      map.setView([p.lat, p.lng], Math.min(16, ZOOM_URBAN_MAX));
+      map.setView([p.lat, p.lng], Math.min(ZOOM_100M, ZOOM_URBAN_MAX));
       m.openPopup();
     }
   });
