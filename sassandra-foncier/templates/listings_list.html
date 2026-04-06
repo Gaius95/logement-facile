@@ -1,23 +1,41 @@
 {% extends "layout_inner.html" %}
-{% block title %}Vente de biens — {{ app_name }}{% endblock %}
+{% block title %}Annonces publiées — {{ app_name }}{% endblock %}
 {% block content %}
-<h1 class="page-title">Espace vente</h1>
+<h1 class="page-title">Annonces publiées</h1>
 <p class="page-lead">
+  Toutes les personnes inscrites (particuliers ou entreprises immobilières) peuvent consulter cette vitrine.
+  Ouvrez une annonce pour voir les photos, commenter et échanger avec l’annonceur.
+</p>
+<p class="page-lead" style="margin-top:-8px;">
   {% if current_user %}
-    <a class="btn btn-primary" href="{{ url_for('listing_new') }}">Deposer une annonce</a>
+    <a class="btn btn-primary" href="{{ url_for('listing_new') }}">Déposer une annonce</a>
   {% else %}
-    <a href="{{ url_for('auth_login') }}">Connecte-toi</a> pour deposer une annonce.
+    <a href="{{ url_for('auth_login', next=url_for('listing_new')) }}">Connectez-vous</a> ou
+    <a href="{{ url_for('auth_register') }}">créez un compte</a> pour publier un bien.
+    Les <a href="{{ url_for('enterprise_register') }}">entreprises</a> disposent d’un formulaire dédié.
   {% endif %}
 </p>
-<div class="form-grid" style="gap:16px;">
+<div class="listing-feed">
   {% for l in listings %}
-    <div class="card-panel">
-      <h2 style="margin:0 0 8px;font-size:1.15rem;"><a href="{{ url_for('listing_detail', listing_id=l.id) }}">{{ l.title }}</a></h2>
-      <p class="muted" style="margin:0 0 8px;">{% if l.price_cfa %}{{ l.price_cfa }} FCFA{% else %}Prix sur demande{% endif %} · {{ l.status }}</p>
-      <p style="margin:0;">{{ (l.description or '')[:160] }}{% if l.description and l.description|length > 160 %}…{% endif %}</p>
-    </div>
+    <article class="listing-card">
+      <a href="{{ url_for('listing_detail', listing_id=l.id) }}" class="listing-card__media">
+        {% if l.id in first_thumb %}
+          <img src="{{ first_thumb[l.id] }}" alt="" loading="lazy" />
+        {% else %}
+          <div class="listing-card__placeholder">Photo</div>
+        {% endif %}
+      </a>
+      <div class="listing-card__body">
+        <h2 class="listing-card__title"><a href="{{ url_for('listing_detail', listing_id=l.id) }}">{{ l.title }}</a></h2>
+        <p class="muted listing-card__meta">
+          {% if l.price_cfa %}{{ l.price_cfa }} FCFA{% else %}Prix sur demande{% endif %}
+        </p>
+        <p class="listing-card__excerpt">{{ (l.description or '')[:180] }}{% if l.description and l.description|length > 180 %}…{% endif %}</p>
+        <a class="btn btn-ghost" href="{{ url_for('listing_detail', listing_id=l.id) }}">Voir l’annonce</a>
+      </div>
+    </article>
   {% else %}
-    <p class="muted">Aucune annonce publiee pour l’instant.</p>
+    <p class="muted">Aucune annonce publiée pour l’instant.</p>
   {% endfor %}
 </div>
 {% endblock %}
