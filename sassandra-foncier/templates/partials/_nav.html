@@ -1,10 +1,11 @@
 <header class="site-header site-header--inner">
   <div class="container header-inner">
-    <a class="brand" href="{{ url_for('index') }}">{{ app_name }}</a>
+    {% include "partials/_brand.html" %}
     <nav class="nav">
       <a href="{{ url_for('search_hub') }}">Recherche</a>
       <a href="{{ url_for('map_sig') }}">Carte</a>
       <a href="{{ url_for('listings_list') }}">Vente</a>
+      <a href="{{ url_for('a_propos') }}">À propos</a>
       {% if current_user %}
         <a href="{{ url_for('requests_list') }}">Mes demandes</a>
       {% endif %}
