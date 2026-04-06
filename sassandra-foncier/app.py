@@ -21,7 +21,19 @@ from fpdf import FPDF
 from sqlalchemy import func
 
 import config
-from models import AdminRequest, AuditLog, LandTitle, Listing, Parcel, ParcelHistory, User, db
+from models import (
+    AdminRequest,
+    AuditLog,
+    CompanyProfile,
+    LandTitle,
+    Listing,
+    ListingComment,
+    ListingLike,
+    Parcel,
+    ParcelHistory,
+    User,
+    db,
+)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 INSTANCE_DIR = os.path.join(BASE_DIR, "instance")
@@ -183,6 +195,48 @@ def index():
 @app.route("/a-propos")
 def a_propos():
     return render_template("a_propos.html")
+
+
+@app.route("/entreprise")
+def enterprise_hub():
+    return render_template("enterprise_hub.html")
+
+
+@app.route("/entreprise/inscription", methods=["GET", "POST"])
+def enterprise_register():
+    if request.method == "POST":
+        company_name = (request.form.get("company_name") or "").strip()
+        email = (request.form.get("email") or "").strip().lower()
+        phone = (request.form.get("phone") or "").strip()
+        password = request.form.get("password") or ""
+        siege = (request.form.get("siege") or "").strip()
+        ville = (request.form.get("ville") or "").strip()
+        rc = (request.form.get("registre_commerce") or "").strip()
+        if not all([company_name, email, password, siege, ville, rc]):
+            flash("Remplis tous les champs obligatoires.", "error")
+        elif len(password) < 6:
+            flash("Mot de passe : au moins 6 caracteres.", "error")
+        elif User.query.filter_by(email=email).first():
+            flash("Cet email est deja utilise.", "error")
+        else:
+            u = User(email=email, full_name=company_name, phone=phone or None, role="company")
+            u.set_password(password)
+            db.session.add(u)
+            db.session.flush()
+            db.session.add(
+                CompanyProfile(
+                    user_id=u.id,
+                    company_name=company_name,
+                    siege=siege,
+                    ville=ville,
+                    registre_commerce=rc,
+                )
+            )
+            db.session.commit()
+            session["user_id"] = u.id
+            flash("Compte entreprise cree. Vous pouvez publier vos biens.", "success")
+            return redirect(url_for("listings_list"))
+    return render_template("enterprise_register.html")
 
 
 @app.route("/auth/connexion", methods=["GET", "POST"])
@@ -440,7 +494,72 @@ def listing_new():
 @app.route("/vente/<int:listing_id>")
 def listing_detail(listing_id):
     l = Listing.query.get_or_404(listing_id)
-    return render_template("listing_detail.html", listing=l)
+    uid = session.get("user_id")
+    comments = []
+    like_count = 0
+    user_liked = False
+    if l.status == "published":
+        comments = (
+            ListingComment.query.filter_by(listing_id=l.id)
+            .order_by(ListingComment.created_at.desc())
+            .all()
+        )
+        like_count = ListingLike.query.filter_by(listing_id=l.id).count()
+        if uid:
+            user_liked = ListingLike.query.filter_by(listing_id=l.id, user_id=uid).first() is not None
+    publisher = l.user
+    publisher_label = (
+        publisher.company_profile.company_name
+        if getattr(publisher, "company_profile", None)
+        else publisher.full_name
+    )
+    return render_template(
+        "listing_detail.html",
+        listing=l,
+        comments=comments,
+        like_count=like_count,
+        user_liked=user_liked,
+        publisher_label=publisher_label,
+    )
+
+
+@app.route("/vente/<int:listing_id>/commenter", methods=["POST"])
+@login_required
+def listing_comment(listing_id):
+    l = Listing.query.get_or_404(listing_id)
+    if l.status != "published":
+        flash("Les commentaires sont disponibles sur les annonces publiees uniquement.", "error")
+        return redirect(url_for("listing_detail", listing_id=listing_id))
+    body = (request.form.get("body") or "").strip()
+    if not body:
+        flash("Saisissez un message.", "error")
+    else:
+        db.session.add(
+            ListingComment(listing_id=l.id, user_id=session["user_id"], body=body)
+        )
+        log_audit(session["user_id"], "commentaire annonce", "Listing", str(l.id), None)
+        db.session.commit()
+        flash("Commentaire publie.", "success")
+    return redirect(url_for("listing_detail", listing_id=listing_id))
+
+
+@app.route("/vente/<int:listing_id>/like", methods=["POST"])
+@login_required
+def listing_like(listing_id):
+    l = Listing.query.get_or_404(listing_id)
+    if l.status != "published":
+        flash("Les reactions sont disponibles sur les annonces publiees uniquement.", "error")
+        return redirect(url_for("listing_detail", listing_id=listing_id))
+    uid = session["user_id"]
+    existing = ListingLike.query.filter_by(listing_id=l.id, user_id=uid).first()
+    if existing:
+        db.session.delete(existing)
+        flash("Like retire.", "info")
+    else:
+        db.session.add(ListingLike(listing_id=l.id, user_id=uid))
+        flash("Merci pour votre interet.", "success")
+    db.session.commit()
+    return redirect(url_for("listing_detail", listing_id=listing_id))
 
 
 @app.route("/admin")
