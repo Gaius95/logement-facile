@@ -583,6 +583,36 @@ table.data th {
   color: var(--text);
 }
 
+.prose-block .prose-list {
+  margin: 0 0 18px;
+  padding-left: 1.35rem;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.prose-block .prose-list li {
+  margin-bottom: 8px;
+}
+
+.prose-block .prose-list li::marker {
+  color: var(--green-mid);
+}
+
+.prose-block .prose-callout {
+  font-weight: 600;
+  color: var(--green);
+  padding: 12px 16px;
+  background: var(--green-soft);
+  border-radius: 12px;
+  border-left: 4px solid var(--orange);
+}
+
+.prose-block .prose-hr {
+  border: none;
+  border-top: 1px solid var(--ring-green-soft);
+  margin: 28px 0 20px;
+}
+
 .prose-block .btn {
   margin-top: 8px;
 }
