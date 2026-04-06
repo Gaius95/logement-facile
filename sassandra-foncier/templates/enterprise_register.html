@@ -1,0 +1,39 @@
+{% extends "layout_inner.html" %}
+{% block title %}Inscription entreprise — {{ app_name }}{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Compte entreprise immobilière</h1>
+<p class="page-lead">Renseignez les informations légales et de contact de votre structure.</p>
+<form method="post" class="card-panel form-grid" style="max-width:560px;">
+  <div>
+    <label for="company_name">Nom de l’entreprise</label>
+    <input id="company_name" name="company_name" type="text" required autocomplete="organization" />
+  </div>
+  <div>
+    <label for="email">Adresse électronique</label>
+    <input id="email" name="email" type="email" required autocomplete="email" />
+  </div>
+  <div>
+    <label for="phone">Numéro de téléphone</label>
+    <input id="phone" name="phone" type="tel" autocomplete="tel" />
+  </div>
+  <div>
+    <label for="siege">Siège social (adresse)</label>
+    <input id="siege" name="siege" type="text" required autocomplete="street-address" />
+  </div>
+  <div>
+    <label for="ville">Ville</label>
+    <input id="ville" name="ville" type="text" required autocomplete="address-level2" />
+  </div>
+  <div>
+    <label for="registre_commerce">Registre de commerce</label>
+    <input id="registre_commerce" name="registre_commerce" type="text" required />
+  </div>
+  <div>
+    <label for="password">Mot de passe</label>
+    <input id="password" name="password" type="password" required minlength="6" autocomplete="new-password" />
+  </div>
+  <button type="submit" class="btn btn-primary">Créer le compte entreprise</button>
+</form>
+<p class="muted"><a href="{{ url_for('enterprise_hub') }}">Retour à l’espace entreprise</a></p>
+{% endblock %}
