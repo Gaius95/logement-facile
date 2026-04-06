@@ -1,15 +1,44 @@
 {% extends "layout_inner.html" %}
 {% block title %}Nouvelle annonce — {{ app_name }}{% endblock %}
+
 {% block content %}
 <h1 class="page-title">Deposer une annonce</h1>
 <p class="page-lead">
   {% if current_user and current_user.role == 'company' %}
-  Compte entreprise : vous pouvez publier plusieurs biens. Chaque annonce est soumise pour validation par un agent avant publication.
+  Compte entreprise : vous pouvez publier plusieurs biens avec photos. Chaque annonce est soumise pour validation par un agent avant publication.
   {% else %}
-  Soumission pour validation par un agent.
+  Les photos sont obligatoires (au moins une). Soumission pour validation par un agent.
   {% endif %}
 </p>
-<form method="post" class="card-panel form-grid" style="max-width:560px;">
+
+<form id="listingForm" method="post" enctype="multipart/form-data" class="card-panel form-grid" style="max-width:560px;">
+  {# Photos en premier : zone très visible (le champ ne doit pas être « caché » sous la ligne de flottaison) #}
+  <div class="file-upload-block">
+    <p class="file-upload-block__label">Photos du bien — obligatoire</p>
+    <p class="muted" style="margin:0 0 10px;font-size:0.9rem;">
+      Formats : JPG, PNG, WEBP ou GIF. Vous pouvez en choisir plusieurs (Ctrl ou Cmd + clic).
+    </p>
+    <div class="file-upload-box">
+      <input
+        id="images"
+        class="file-upload-box__input"
+        name="images"
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/gif,.jpg,.jpeg,.png,.webp,.gif"
+        multiple
+        aria-label="Photos du bien, au moins une image"
+      />
+      <div class="file-upload-box__face" aria-hidden="true">
+        <span class="file-upload-box__title">Choisir des fichiers</span>
+        <span class="file-upload-box__hint">cliquez dans cette zone pour parcourir vos images</span>
+      </div>
+    </div>
+    <p id="fileListHint" class="file-upload-names muted" aria-live="polite"></p>
+    <button type="button" class="btn btn-ghost" style="margin-top:10px;" onclick="document.getElementById('images').click()">
+      Parcourir les fichiers…
+    </button>
+  </div>
+
   <div>
     <label for="title">Titre du bien</label>
     <input id="title" name="title" type="text" required />
@@ -38,4 +67,33 @@
   </div>
   <button type="submit" class="btn btn-primary">Soumettre</button>
 </form>
+
+<script>
+(function () {
+  var input = document.getElementById('images');
+  var hint = document.getElementById('fileListHint');
+  var form = document.getElementById('listingForm');
+  if (!input || !form) return;
+
+  function showNames() {
+    if (!input.files || !input.files.length) {
+      hint.textContent = '';
+      return;
+    }
+    var names = [];
+    for (var i = 0; i < input.files.length; i++) names.push(input.files[i].name);
+    hint.textContent = names.length + ' fichier(s) sélectionné(s) : ' + names.join(', ');
+  }
+  input.addEventListener('change', showNames);
+
+  form.addEventListener('submit', function (e) {
+    if (!input.files || input.files.length === 0) {
+      e.preventDefault();
+      alert('Veuillez choisir au moins une photo du bien (JPG, PNG, WEBP ou GIF) avant d’envoyer le formulaire.');
+      input.focus();
+      return false;
+    }
+  });
+})();
+</script>
 {% endblock %}
