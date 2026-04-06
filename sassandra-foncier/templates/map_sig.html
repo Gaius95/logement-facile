@@ -7,8 +7,8 @@
 {% block content %}
 <h1 class="page-title">Carte des parcelles</h1>
 <p class="page-lead">
-  Choisissez le fond de carte : <strong>végétation & relief</strong> (imagerie satellite, plus précise pour le terrain et la couverture végétale)
-  ou <strong>urbanisation</strong> (plan clair axé routes, bâtiments et tissu urbain, sans mise en avant du vert).
+  <strong>Vue végétation & relief</strong> : imagerie satellite (zoom limité pour éviter les zones sans image et le flou).
+  <strong>Vue urbanisation</strong> : plan OpenStreetMap très lisible (routes, bâtiments, noms).
 </p>
 <div class="map-toolbar" role="group" aria-label="Fond de carte">
   <span class="map-toolbar__label">Vue :</span>
@@ -21,7 +21,8 @@
 </div>
 <div id="map-sig" class="map-embed map-embed--large"></div>
 <p class="muted" style="margin-top:10px;font-size:0.88rem;">
-  Fonds : Esri (imagerie mondiale) et CartoDB (plan clair). Les parcelles démo sont des exemples.
+  Satellite : Esri (ne pas zoomer au-delà du niveau autorisé — au-delà, image absente ou floue selon la zone).
+  Urbanisation : OpenStreetMap. Parcelles démo : exemples.
 </p>
 {% endblock %}
 {% block scripts %}
@@ -31,42 +32,52 @@
   var parcels = {{ parcels_json|safe }};
   var focusId = {{ focus_public_id|tojson }};
 
+  /* Zoom satellite : maxNativeZoom = maxZoom évite l'agrandissement flou des tuiles.
+     En zone rurale (ex. Nawa), Esri n'a souvent pas d'image au-delà de z≈17–18 : au-delà = gris « Map data not yet available ». */
+  var ZOOM_SAT_MAX = 17;
+
   var attributionSat =
-    '&copy; Esri, Maxar, Earthstar Geographics | ' +
+    'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics | ' +
     '<a href="https://www.openstreetmap.org/copyright" rel="noopener">OSM</a>';
   var attributionUrban =
-    '&copy; <a href="https://www.openstreetmap.org/copyright" rel="noopener">OpenStreetMap</a> ' +
-    '&copy; <a href="https://carto.com/attributions" rel="noopener">CARTO</a>';
+    '&copy; <a href="https://www.openstreetmap.org/copyright" rel="noopener">OpenStreetMap</a> contributeurs';
 
   var layerSat = L.tileLayer(
     'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
     {
-      maxZoom: 19,
-      attribution: attributionSat
+      maxZoom: ZOOM_SAT_MAX,
+      maxNativeZoom: ZOOM_SAT_MAX,
+      attribution: attributionSat,
+      detectRetina: false
     }
   );
 
-  var layerUrban = L.tileLayer(
-    'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-    {
-      subdomains: 'abcd',
-      maxZoom: 20,
-      attribution: attributionUrban
-    }
-  );
+  /* Plan urbain net : OSM standard (lisible), zoom jusqu'à 19 sans fond « lavé » comme Positron seul. */
+  var ZOOM_URBAN_MAX = 19;
+  var layerUrban = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: ZOOM_URBAN_MAX,
+    maxNativeZoom: ZOOM_URBAN_MAX,
+    attribution: attributionUrban,
+    detectRetina: false
+  });
 
   var map = L.map('map-sig', {
     layers: [layerSat],
     zoomControl: true,
-    scrollWheelZoom: true
+    scrollWheelZoom: true,
+    maxZoom: ZOOM_SAT_MAX
   }).setView([4.95, -6.08], 14);
 
-  L.control.scale({ metric: true, imperial: false, maxWidth: 200 }).addTo(map);
+  L.control.scale({ metric: true, imperial: false, maxWidth: 220 }).addTo(map);
 
   var btnSat = document.getElementById('mapBtnSat');
   var btnUrban = document.getElementById('mapBtnUrban');
 
   function setActiveSat() {
+    map.setMaxZoom(ZOOM_SAT_MAX);
+    if (map.getZoom() > ZOOM_SAT_MAX) {
+      map.setZoom(ZOOM_SAT_MAX);
+    }
     if (map.hasLayer(layerUrban)) map.removeLayer(layerUrban);
     if (!map.hasLayer(layerSat)) map.addLayer(layerSat);
     btnSat.classList.add('is-active');
@@ -76,6 +87,7 @@
   }
 
   function setActiveUrban() {
+    map.setMaxZoom(ZOOM_URBAN_MAX);
     if (map.hasLayer(layerSat)) map.removeLayer(layerSat);
     if (!map.hasLayer(layerUrban)) map.addLayer(layerUrban);
     btnUrban.classList.add('is-active');
@@ -92,7 +104,7 @@
     var m = L.marker([p.lat, p.lng]).addTo(map);
     m.bindPopup('<a href="/parcelle/' + encodeURIComponent(p.id) + '">' + p.id + '</a>');
     if (focusId && p.id === focusId) {
-      map.setView([p.lat, p.lng], 16);
+      map.setView([p.lat, p.lng], Math.min(16, ZOOM_URBAN_MAX));
       m.openPopup();
     }
   });
