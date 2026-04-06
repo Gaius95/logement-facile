@@ -1,0 +1,24 @@
+{% extends "layout_inner.html" %}
+{% block title %}À propos — {{ app_name }}{% endblock %}
+
+{% block content %}
+<article class="prose-block">
+  <h1>À propos de nous</h1>
+  <p class="lead">
+    <strong>La Nawa</strong> est au cœur de la plateforme <strong>{{ app_name }}</strong>, dédiée au Grand Sassandra :
+    transparence foncière, cartographie et accompagnement des démarches.
+  </p>
+  <p>
+    Nous mettons en relation les <strong>particuliers</strong> qui cherchent un terrain, une parcelle ou un bien
+    avec des <strong>entreprises et professionnels de l’immobilier</strong> (agences, promoteurs, conseils) afin de
+    faciliter les échanges, les visites et les projets dans le respect des règles locales.
+  </p>
+  <p>
+    Notre mission est de rendre l’information plus accessible — titres, parcelles, carte SIG — tout en offrant un
+    espace où demandeurs et acteurs du secteur peuvent se retrouver pour avancer sereinement.
+  </p>
+  <p>
+    <a class="btn btn-primary" href="{{ url_for('index') }}">Retour à l’accueil</a>
+  </p>
+</article>
+{% endblock %}
