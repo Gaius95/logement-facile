@@ -1,28 +1,46 @@
 {% extends "layout_inner.html" %}
-{% block title %}Nouvelle demande — {{ app_name }}{% endblock %}
+{% block title %}Nouvelle annonce — {{ app_name }}{% endblock %}
 {% block content %}
-<h1 class="page-title">Nouvelle demande</h1>
-<form method="post" class="card-panel form-grid" style="max-width:560px;">
+<h1 class="page-title">Deposer une annonce</h1>
+<p class="page-lead">
+  {% if current_user and current_user.role == 'company' %}
+  Compte entreprise : vous pouvez publier plusieurs biens avec photos. Chaque annonce est soumise pour validation par un agent avant publication.
+  {% else %}
+  Ajoutez au moins une photo du bien. Soumission pour validation par un agent.
+  {% endif %}
+</p>
+<form method="post" enctype="multipart/form-data" class="card-panel form-grid" style="max-width:560px;">
   <div>
-    <label for="request_type">Type</label>
-    <select id="request_type" name="request_type" required>
-      {% for val, label in types %}
-        <option value="{{ val }}">{{ label }}</option>
-      {% endfor %}
-    </select>
+    <label for="title">Titre du bien</label>
+    <input id="title" name="title" type="text" required />
+  </div>
+  <div>
+    <label for="images">Photos du bien <span class="muted">(obligatoire — JPG, PNG, WEBP ou GIF)</span></label>
+    <input id="images" name="images" type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple required />
+    <p class="muted" style="margin:6px 0 0;font-size:0.88rem;">Vous pouvez sélectionner plusieurs fichiers à la fois.</p>
   </div>
   <div>
     <label for="parcel_public_id">Identifiant parcelle (optionnel)</label>
     <input id="parcel_public_id" name="parcel_public_id" type="text" placeholder="SA-2024-001" />
   </div>
   <div>
-    <label for="subject">Sujet</label>
-    <input id="subject" name="subject" type="text" required />
+    <label for="price_cfa">Prix (FCFA)</label>
+    <input id="price_cfa" name="price_cfa" type="number" min="0" />
+  </div>
+  <div class="form-grid two">
+    <div>
+      <label for="lat">Latitude</label>
+      <input id="lat" name="lat" type="text" placeholder="4.95" />
+    </div>
+    <div>
+      <label for="lng">Longitude</label>
+      <input id="lng" name="lng" type="text" placeholder="-6.08" />
+    </div>
   </div>
   <div>
-    <label for="body">Detail</label>
-    <textarea id="body" name="body" required></textarea>
+    <label for="description">Description</label>
+    <textarea id="description" name="description"></textarea>
   </div>
-  <button type="submit" class="btn btn-primary">Envoyer</button>
+  <button type="submit" class="btn btn-primary">Soumettre</button>
 </form>
 {% endblock %}
