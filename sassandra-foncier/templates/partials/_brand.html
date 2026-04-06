@@ -1,0 +1,7 @@
+<a class="brand{% if brand_logo_url %} brand--logo{% endif %}" href="{{ url_for('index') }}">
+  {% if brand_logo_url %}
+    <img src="{{ brand_logo_url }}" alt="La Nawa — gestion immobilière et biens fonciers" width="200" height="56" loading="eager" decoding="async" />
+  {% else %}
+    {{ app_name }}
+  {% endif %}
+</a>
