@@ -94,6 +94,10 @@ def inject_globals():
         path = os.path.join(BASE_DIR, "static", rel.replace("/", os.sep))
         if os.path.isfile(path):
             hero_urls.append(url_for("static", filename=rel))
+    logo_path = os.path.join(BASE_DIR, "static", config.BRAND_LOGO.replace("/", os.sep))
+    brand_logo_url = (
+        url_for("static", filename=config.BRAND_LOGO) if os.path.isfile(logo_path) else None
+    )
     uid = session.get("user_id")
     user = User.query.get(uid) if uid else None
     return {
@@ -101,6 +105,7 @@ def inject_globals():
         "hero_image_urls": hero_urls,
         "hero_interval_ms": config.HERO_INTERVAL_MS,
         "current_user": user,
+        "brand_logo_url": brand_logo_url,
     }
 
 
@@ -173,6 +178,11 @@ def seed_if_empty():
 @app.route("/")
 def index():
     return render_template("index.html")
+
+
+@app.route("/a-propos")
+def a_propos():
+    return render_template("a_propos.html")
 
 
 @app.route("/auth/connexion", methods=["GET", "POST"])
