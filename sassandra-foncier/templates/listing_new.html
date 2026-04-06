@@ -18,7 +18,7 @@
     <p class="muted" style="margin:0 0 10px;font-size:0.9rem;">
       Formats : JPG, PNG, WEBP ou GIF. Vous pouvez en choisir plusieurs (Ctrl ou Cmd + clic).
     </p>
-    <div class="file-upload-box">
+    <label class="file-upload-box">
       <input
         id="images"
         class="file-upload-box__input"
@@ -28,15 +28,12 @@
         multiple
         aria-label="Photos du bien, au moins une image"
       />
-      <div class="file-upload-box__face" aria-hidden="true">
+      <span class="file-upload-box__face">
         <span class="file-upload-box__title">Choisir des fichiers</span>
-        <span class="file-upload-box__hint">cliquez dans cette zone pour parcourir vos images</span>
-      </div>
-    </div>
+        <span class="file-upload-box__hint">touchez ou cliquez toute cette zone orange</span>
+      </span>
+    </label>
     <p id="fileListHint" class="file-upload-names muted" aria-live="polite"></p>
-    <button type="button" class="btn btn-ghost" style="margin-top:10px;" onclick="document.getElementById('images').click()">
-      Parcourir les fichiers…
-    </button>
   </div>
 
   <div>
