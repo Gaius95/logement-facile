@@ -16,11 +16,12 @@
 
   <header class="site-header">
     <div class="container header-inner">
-      <a class="brand" href="{{ url_for('index') }}">{{ app_name }}</a>
+      {% include "partials/_brand.html" %}
       <nav class="nav">
         <a href="{{ url_for('search_hub') }}">Recherche</a>
         <a href="{{ url_for('map_sig') }}">Carte</a>
         <a href="{{ url_for('listings_list') }}">Vente</a>
+        <a href="{{ url_for('a_propos') }}">À propos</a>
         {% if current_user %}
           <a href="{{ url_for('requests_list') }}">Mes demandes</a>
         {% endif %}
@@ -51,9 +52,10 @@
     <div class="container hero-grid">
       <div class="hero-copy">
         <p class="hero-kicker">Plateforme foncière — Sassandra</p>
-        <h1>Transparence, cartographie et services administratifs réunis</h1>
+        <h1 class="hero-title">Transparence, cartographie et services administratifs réunis</h1>
         <p class="hero-lead">
-          Recherchez une parcelle, consultez les informations utiles et préparez vos démarches en ligne.
+          Mise en relation entre particuliers et entreprises immobilières, recherche de parcelle, informations utiles
+          et préparation de vos démarches en ligne.
         </p>
         <div class="hero-actions">
           <a class="btn btn-primary" href="{{ url_for('search_hub') }}">Rechercher une parcelle</a>
