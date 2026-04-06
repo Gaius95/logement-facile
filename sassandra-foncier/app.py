@@ -523,11 +523,22 @@ def listing_new():
         except ValueError:
             lat_f = lng_f = None
         ensure_listing_upload_dir()
-        staged = collect_valid_listing_uploads(request.files.getlist("images"))
+        raw_files = request.files.getlist("images")
+        staged = collect_valid_listing_uploads(raw_files)
         if not title:
             flash("Titre requis.", "error")
         elif not staged:
-            flash("Ajoutez au moins une photo du bien (JPG, PNG, WEBP ou GIF).", "error")
+            if any(f and getattr(f, "filename", None) for f in raw_files):
+                flash(
+                    "Les fichiers choisis ne sont pas au bon format. Utilisez JPG, PNG, WEBP ou GIF "
+                    "(sur iPhone : réglages appareil photo → Formats → « Le plus compatible » pour du JPEG).",
+                    "error",
+                )
+            else:
+                flash(
+                    "Ajoutez au moins une photo du bien dans la zone orange en haut du formulaire (JPG, PNG, WEBP ou GIF).",
+                    "error",
+                )
         else:
             l = Listing(
                 user_id=uid,
@@ -541,14 +552,23 @@ def listing_new():
             )
             db.session.add(l)
             db.session.flush()
-            for i, (f, ext) in enumerate(staged):
-                fn = f"{l.id}_{secrets.token_hex(8)}.{ext}"
-                rel = f"{LISTING_UPLOAD_REL}/{fn}".replace("\\", "/")
-                abs_path = os.path.join(BASE_DIR, "static", *rel.split("/"))
-                f.save(abs_path)
-                db.session.add(ListingImage(listing_id=l.id, filename=rel, sort_order=i))
-            log_audit(uid, "annonce creee", "Listing", str(l.id), title)
-            db.session.commit()
+            try:
+                for i, (f, ext) in enumerate(staged):
+                    fn = f"{l.id}_{secrets.token_hex(8)}.{ext}"
+                    rel = f"{LISTING_UPLOAD_REL}/{fn}".replace("\\", "/")
+                    abs_path = os.path.join(BASE_DIR, "static", *rel.split("/"))
+                    f.save(abs_path)
+                    db.session.add(ListingImage(listing_id=l.id, filename=rel, sort_order=i))
+                log_audit(uid, "annonce creee", "Listing", str(l.id), title)
+                db.session.commit()
+            except OSError:
+                db.session.rollback()
+                flash(
+                    "Impossible d'enregistrer les fichiers sur le serveur (disque plein ou dossier protégé). "
+                    "Réessayez plus tard ou contactez l'administrateur.",
+                    "error",
+                )
+                return render_template("listing_new.html")
             flash("Annonce et photos enregistrees. Validation par un agent avant publication.", "success")
             return redirect(url_for("listings_list"))
     return render_template("listing_new.html")
