@@ -5,9 +5,24 @@
 {% endblock %}
 {% block title %}Carte SIG — {{ app_name }}{% endblock %}
 {% block content %}
-<h1 class="page-title">Carte des parcelles (demo)</h1>
-<p class="page-lead">Clic sur un marqueur pour ouvrir la fiche.</p>
-<div id="map-sig" class="map-embed"></div>
+<h1 class="page-title">Carte des parcelles</h1>
+<p class="page-lead">
+  Choisissez le fond de carte : <strong>végétation & relief</strong> (imagerie satellite, plus précise pour le terrain et la couverture végétale)
+  ou <strong>urbanisation</strong> (plan clair axé routes, bâtiments et tissu urbain, sans mise en avant du vert).
+</p>
+<div class="map-toolbar" role="group" aria-label="Fond de carte">
+  <span class="map-toolbar__label">Vue :</span>
+  <button type="button" class="map-toolbar__btn is-active" id="mapBtnSat" aria-pressed="true">
+    Végétation & détails
+  </button>
+  <button type="button" class="map-toolbar__btn" id="mapBtnUrban" aria-pressed="false">
+    Urbanisation
+  </button>
+</div>
+<div id="map-sig" class="map-embed map-embed--large"></div>
+<p class="muted" style="margin-top:10px;font-size:0.88rem;">
+  Fonds : Esri (imagerie mondiale) et CartoDB (plan clair). Les parcelles démo sont des exemples.
+</p>
 {% endblock %}
 {% block scripts %}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
@@ -15,17 +30,69 @@
 (function(){
   var parcels = {{ parcels_json|safe }};
   var focusId = {{ focus_public_id|tojson }};
-  var map = L.map('map-sig').setView([4.95, -6.08], 13);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    attribution: '&copy; OpenStreetMap'
-  }).addTo(map);
+
+  var attributionSat =
+    '&copy; Esri, Maxar, Earthstar Geographics | ' +
+    '<a href="https://www.openstreetmap.org/copyright" rel="noopener">OSM</a>';
+  var attributionUrban =
+    '&copy; <a href="https://www.openstreetmap.org/copyright" rel="noopener">OpenStreetMap</a> ' +
+    '&copy; <a href="https://carto.com/attributions" rel="noopener">CARTO</a>';
+
+  var layerSat = L.tileLayer(
+    'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    {
+      maxZoom: 19,
+      attribution: attributionSat
+    }
+  );
+
+  var layerUrban = L.tileLayer(
+    'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+    {
+      subdomains: 'abcd',
+      maxZoom: 20,
+      attribution: attributionUrban
+    }
+  );
+
+  var map = L.map('map-sig', {
+    layers: [layerSat],
+    zoomControl: true,
+    scrollWheelZoom: true
+  }).setView([4.95, -6.08], 14);
+
+  L.control.scale({ metric: true, imperial: false, maxWidth: 200 }).addTo(map);
+
+  var btnSat = document.getElementById('mapBtnSat');
+  var btnUrban = document.getElementById('mapBtnUrban');
+
+  function setActiveSat() {
+    if (map.hasLayer(layerUrban)) map.removeLayer(layerUrban);
+    if (!map.hasLayer(layerSat)) map.addLayer(layerSat);
+    btnSat.classList.add('is-active');
+    btnUrban.classList.remove('is-active');
+    btnSat.setAttribute('aria-pressed', 'true');
+    btnUrban.setAttribute('aria-pressed', 'false');
+  }
+
+  function setActiveUrban() {
+    if (map.hasLayer(layerSat)) map.removeLayer(layerSat);
+    if (!map.hasLayer(layerUrban)) map.addLayer(layerUrban);
+    btnUrban.classList.add('is-active');
+    btnSat.classList.remove('is-active');
+    btnUrban.setAttribute('aria-pressed', 'true');
+    btnSat.setAttribute('aria-pressed', 'false');
+  }
+
+  btnSat.addEventListener('click', setActiveSat);
+  btnUrban.addEventListener('click', setActiveUrban);
+
   if (!parcels.length) return;
   parcels.forEach(function(p){
     var m = L.marker([p.lat, p.lng]).addTo(map);
     m.bindPopup('<a href="/parcelle/' + encodeURIComponent(p.id) + '">' + p.id + '</a>');
     if (focusId && p.id === focusId) {
-      map.setView([p.lat, p.lng], 15);
+      map.setView([p.lat, p.lng], 16);
       m.openPopup();
     }
   });
