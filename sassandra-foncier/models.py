@@ -42,6 +42,10 @@ class Parcel(db.Model):
     area_m2 = db.Column(db.Float, nullable=False)
     lat = db.Column(db.Float, nullable=False)
     lng = db.Column(db.Float, nullable=False)
+    # GeoJSON Polygon (WGS84) pour le contour exact ; optionnel tant que non renseigné
+    geometry_geojson = db.Column(db.Text, nullable=True)
+    # Fichier plan de masse (image/PDF) sous static/uploads/parcels/
+    plan_masse_path = db.Column(db.String(400), nullable=True)
     created_at = db.Column(db.DateTime, default=utcnow)
     history_events = db.relationship("ParcelHistory", backref="parcel", lazy="dynamic")
 
