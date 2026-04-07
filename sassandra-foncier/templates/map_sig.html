@@ -103,12 +103,44 @@
   btnUrban.addEventListener('click', setActiveUrban);
 
   if (!parcels.length) return;
-  parcels.forEach(function(p){
-    var m = L.marker([p.lat, p.lng]).addTo(map);
-    m.bindPopup('<a href="/parcelle/' + encodeURIComponent(p.id) + '">' + p.id + '</a>');
-    if (focusId && p.id === focusId) {
-      map.setView([p.lat, p.lng], Math.min(ZOOM_100M, ZOOM_URBAN_MAX));
-      m.openPopup();
+
+  function ringToLatLngs(ring) {
+    return ring.map(function (c) {
+      return [c[1], c[0]];
+    });
+  }
+
+  parcels.forEach(function (p) {
+    var popupHtml =
+      '<a href="/parcelle/' + encodeURIComponent(p.id) + '">' + p.id + '</a>';
+    var poly =
+      p.polygon &&
+      p.polygon.type === 'Polygon' &&
+      p.polygon.coordinates &&
+      p.polygon.coordinates[0];
+    if (poly) {
+      var latlngs = ringToLatLngs(poly);
+      var pg = L.polygon(latlngs, {
+        color: '#c45c26',
+        weight: 2,
+        fillColor: '#f5a623',
+        fillOpacity: 0.28,
+      }).addTo(map);
+      pg.bindPopup(popupHtml);
+      if (focusId && p.id === focusId) {
+        map.fitBounds(pg.getBounds(), {
+          padding: [48, 48],
+          maxZoom: Math.min(ZOOM_100M, ZOOM_URBAN_MAX),
+        });
+        pg.openPopup();
+      }
+    } else {
+      var m = L.marker([p.lat, p.lng]).addTo(map);
+      m.bindPopup(popupHtml);
+      if (focusId && p.id === focusId) {
+        map.setView([p.lat, p.lng], Math.min(ZOOM_100M, ZOOM_URBAN_MAX));
+        m.openPopup();
+      }
     }
   });
 })();
