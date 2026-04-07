@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 268" width="220" height="268" role="img" aria-labelledby="logoTitle">
+  <title id="logoTitle">Le Foncier du Bas-Sassandra</title>
+  <defs>
+    <linearGradient id="pinGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#c62828"/>
+      <stop offset="45%" stop-color="#f57c00"/>
+      <stop offset="100%" stop-color="#ffeb3b"/>
+    </linearGradient>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000" flood-opacity="0.18"/>
+    </filter>
+    <clipPath id="pinClip">
+      <path d="M110 12c38 0 68 30 68 68 0 36-68 118-68 118S42 116 42 80c0-38 30-68 68-68z"/>
+    </clipPath>
+  </defs>
+
+  <!-- Ombre sous la pointe -->
+  <ellipse cx="110" cy="198" rx="28" ry="5" fill="#000" opacity="0.08"/>
+
+  <!-- Epingle (forme goutte) -->
+  <g filter="url(#softShadow)">
+    <path fill="url(#pinGrad)" d="M110 12c38 0 68 30 68 68 0 36-68 118-68 118S42 116 42 80c0-38 30-68 68-68z"/>
+  </g>
+
+  <!-- Contenu interieur (carte blanche + symboles) -->
+  <g clip-path="url(#pinClip)">
+    <!-- Silhouette region (simplifiee) -->
+    <path fill="#fff" fill-opacity="0.95" d="M75 48c18-8 38-6 52 4 14 12 18 32 14 48-4 14-18 26-32 30-10 4-22 2-32-4-14-10-18-28-12-44 4-12 14-22 26-28l-16-6z"/>
+    <!-- Cacao / cafe (symboles) -->
+    <ellipse cx="102" cy="72" rx="10" ry="14" fill="#fbc02d" stroke="#e65100" stroke-width="1"/>
+    <ellipse cx="98" cy="78" rx="4" ry="5" fill="#fffde7"/>
+    <circle cx="118" cy="68" r="5" fill="#c62828"/>
+    <circle cx="112" cy="76" r="4" fill="#c62828"/>
+    <path d="M92 64q-4-6 0-10 4 4 0 10z" fill="#2e7d32"/>
+    <!-- Maison -->
+    <g transform="translate(128 78)">
+      <rect x="0" y="10" width="22" height="16" fill="#fff" rx="1"/>
+      <path d="M-2 12 L11 2 L24 12 Z" fill="#43a047"/>
+      <rect x="8" y="16" width="6" height="8" fill="#81c784"/>
+    </g>
+    <!-- Navire + vagues (bas de l'epingle) -->
+    <path fill="#1565c0" d="M58 150h104v24c-34 8-70 8-104 0v-24z"/>
+    <rect x="62" y="154" width="14" height="8" fill="#e53935" rx="1"/>
+    <rect x="78" y="152" width="12" height="10" fill="#fdd835" rx="1"/>
+    <path fill="none" stroke="#fff" stroke-width="2" opacity="0.9" d="M50 168c12-6 24-6 36 0s24 6 36 0 24-6 36 0"/>
+    <path fill="none" stroke="#fff" stroke-width="1.5" opacity="0.7" d="M54 174c10-4 20-4 30 0s20 4 30 0"/>
+  </g>
+
+  <!-- Pointe bleue (base epingle) -->
+  <path fill="#0d47a1" d="M96 188h28c-4 10-10 18-14 22-4-4-10-12-14-22z"/>
+
+  <!-- Texte -->
+  <text x="110" y="222" text-anchor="middle" font-family="system-ui,Segoe UI,Arial,sans-serif" font-size="17" font-weight="800" fill="#1a237e" letter-spacing="0.02em">LE FONCIER</text>
+  <text x="110" y="242" text-anchor="middle" font-family="system-ui,Segoe UI,Arial,sans-serif" font-size="11.5" font-weight="700" fill="#1b5e20" letter-spacing="0.04em">DU BAS-SASSANDRA</text>
+
+  <!-- Ligne decorative : orange - vert - orange -->
+  <rect x="48" y="252" width="36" height="4" fill="#f57c00" rx="1"/>
+  <rect x="86" y="252" width="48" height="4" fill="#2e7d32" rx="1"/>
+  <rect x="136" y="252" width="36" height="4" fill="#f57c00" rx="1"/>
+</svg>
