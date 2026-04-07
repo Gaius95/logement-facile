@@ -19,7 +19,7 @@ from flask import (
     url_for,
 )
 from fpdf import FPDF
-from sqlalchemy import func
+from sqlalchemy import func, inspect, text
 
 import config
 from models import (
@@ -41,12 +41,33 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 INSTANCE_DIR = os.path.join(BASE_DIR, "instance")
 
 LISTING_UPLOAD_REL = "uploads/listings"
+PARCEL_UPLOAD_REL = "uploads/parcels"
 ALLOWED_LISTING_IMAGES = frozenset({"png", "jpg", "jpeg", "webp", "gif"})
+ALLOWED_PLAN_MASSE = frozenset({"png", "jpg", "jpeg", "webp", "gif", "pdf"})
 
 
 def ensure_listing_upload_dir() -> None:
     path = os.path.join(BASE_DIR, "static", LISTING_UPLOAD_REL.replace("/", os.sep))
     os.makedirs(path, exist_ok=True)
+
+
+def ensure_parcel_upload_dir() -> None:
+    path = os.path.join(BASE_DIR, "static", PARCEL_UPLOAD_REL.replace("/", os.sep))
+    os.makedirs(path, exist_ok=True)
+
+
+def migrate_parcel_schema() -> None:
+    """Ajoute les colonnes plan / géométrie sur les bases déjà existantes (SQLite ou Postgres)."""
+    try:
+        insp = inspect(db.engine)
+        cols = {c["name"] for c in insp.get_columns("parcels")}
+    except Exception:
+        return
+    with db.engine.begin() as conn:
+        if "geometry_geojson" not in cols:
+            conn.execute(text("ALTER TABLE parcels ADD COLUMN geometry_geojson TEXT"))
+        if "plan_masse_path" not in cols:
+            conn.execute(text("ALTER TABLE parcels ADD COLUMN plan_masse_path VARCHAR(400)"))
 
 
 def collect_valid_listing_uploads(files_storage):
@@ -168,6 +189,22 @@ def seed_if_empty():
         ("SA-2024-003", "Sassandra", "Plage", None, "litige", "Mixte", 800.0, 4.96, -6.05),
     ]
     for pid, com, quart, owner, stat, usage, area, la, ln in parcels_data:
+        geom = None
+        if pid == "SA-2024-001":
+            geom = json.dumps(
+                {
+                    "type": "Polygon",
+                    "coordinates": [
+                        [
+                            [ln - 0.003, la - 0.003],
+                            [ln + 0.003, la - 0.003],
+                            [ln + 0.003, la + 0.003],
+                            [ln - 0.003, la + 0.003],
+                            [ln - 0.003, la - 0.003],
+                        ]
+                    ],
+                }
+            )
         p = Parcel(
             public_id=pid,
             commune=com,
@@ -178,6 +215,7 @@ def seed_if_empty():
             area_m2=area,
             lat=la,
             lng=ln,
+            geometry_geojson=geom,
         )
         db.session.add(p)
         db.session.flush()
@@ -372,7 +410,46 @@ def parcel_detail(public_id):
     p = Parcel.query.filter_by(public_id=public_id.upper()).first_or_404()
     history = ParcelHistory.query.filter_by(parcel_id=p.id).order_by(ParcelHistory.created_at.desc()).all()
     title = LandTitle.query.filter_by(parcel_id=p.id).first()
-    return render_template("parcel_detail.html", parcel=p, history=history, title=title)
+    plan_masse_url = None
+    if p.plan_masse_path:
+        plan_masse_url = url_for("static", filename=p.plan_masse_path.replace("\\", "/"))
+    parcel_polygon_json = p.geometry_geojson or ""
+    return render_template(
+        "parcel_detail.html",
+        parcel=p,
+        history=history,
+        title=title,
+        plan_masse_url=plan_masse_url,
+        parcel_polygon_json=parcel_polygon_json,
+    )
+
+
+@app.route("/admin/parcelle/<public_id>/plan-masse", methods=["POST"])
+@role_required("admin", "agent")
+def admin_parcel_plan_masse(public_id):
+    p = Parcel.query.filter_by(public_id=public_id.upper()).first_or_404()
+    f = request.files.get("plan_masse")
+    if not f or not f.filename:
+        flash("Choisissez un fichier (image ou PDF).", "error")
+        return redirect(url_for("parcel_detail", public_id=p.public_id))
+    ext = f.filename.rsplit(".", 1)[-1].lower() if "." in f.filename else ""
+    if ext not in ALLOWED_PLAN_MASSE:
+        flash("Format accepte : PNG, JPG, WEBP, GIF ou PDF.", "error")
+        return redirect(url_for("parcel_detail", public_id=p.public_id))
+    ensure_parcel_upload_dir()
+    fn = f"{p.id}_{secrets.token_hex(6)}.{ext}"
+    rel = f"{PARCEL_UPLOAD_REL}/{fn}".replace("\\", "/")
+    abs_path = os.path.join(BASE_DIR, "static", *rel.split("/"))
+    try:
+        f.save(abs_path)
+    except OSError:
+        flash("Enregistrement impossible sur le serveur.", "error")
+        return redirect(url_for("parcel_detail", public_id=p.public_id))
+    p.plan_masse_path = rel
+    db.session.commit()
+    log_audit(session["user_id"], "plan masse parcelle", "Parcel", p.public_id, None)
+    flash("Plan de masse enregistre.", "success")
+    return redirect(url_for("parcel_detail", public_id=p.public_id))
 
 
 @app.route("/titre/<public_id>")
@@ -476,7 +553,15 @@ def request_track(ref):
 @app.route("/carte")
 def map_sig():
     parcels = Parcel.query.all()
-    geo = [{"id": p.public_id, "lat": p.lat, "lng": p.lng} for p in parcels]
+    geo = []
+    for p in parcels:
+        row = {"id": p.public_id, "lat": p.lat, "lng": p.lng}
+        if getattr(p, "geometry_geojson", None):
+            try:
+                row["polygon"] = json.loads(p.geometry_geojson)
+            except (json.JSONDecodeError, TypeError):
+                pass
+        geo.append(row)
     focus = (request.args.get("focus") or "").strip().upper()
     return render_template(
         "map_sig.html",
@@ -714,8 +799,10 @@ def admin_stats():
 
 with app.app_context():
     db.create_all()
+    migrate_parcel_schema()
     seed_if_empty()
     try:
         ensure_listing_upload_dir()
+        ensure_parcel_upload_dir()
     except OSError as exc:
-        app.logger.warning("Dossier uploads annonces non cree: %s", exc)
+        app.logger.warning("Dossier uploads non cree: %s", exc)
