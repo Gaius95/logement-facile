@@ -1,4 +1,7 @@
 {% extends "layout_inner.html" %}
+{% block head_extra %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+{% endblock %}
 {% block title %}Parcelle {{ parcel.public_id }} — {{ app_name }}{% endblock %}
 {% block content %}
 <h1 class="page-title">{{ parcel.public_id }}</h1>
@@ -14,6 +17,44 @@
     <li><strong>Coordonnees</strong> : {{ parcel.lat|round(5) }}, {{ parcel.lng|round(5) }}</li>
   </ul>
 </div>
+
+{% if plan_masse_url %}
+<div class="card-panel">
+  <h2 style="margin-top:0;font-size:1.1rem;">Plan de masse</h2>
+  {% if parcel.plan_masse_path and parcel.plan_masse_path.lower().endswith('.pdf') %}
+  <p class="muted" style="margin-top:0;">Fichier PDF enregistré pour cette parcelle.</p>
+  <p><a class="btn btn-primary" href="{{ plan_masse_url }}" target="_blank" rel="noopener">Ouvrir le PDF</a></p>
+  {% else %}
+  <div class="parcel-plan-thumb">
+    <a href="{{ plan_masse_url }}" target="_blank" rel="noopener" title="Agrandir">
+      <img src="{{ plan_masse_url }}" alt="Plan de masse — {{ parcel.public_id }}" />
+    </a>
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
+<div class="card-panel">
+  <h2 style="margin-top:0;font-size:1.1rem;">Emplacement</h2>
+  <p class="muted" style="margin:0 0 10px;font-size:0.9rem;">
+    {% if parcel_polygon_json %}Contour enregistré (polygone).{% else %}Point de repère sur la carte.{% endif %}
+  </p>
+  <div id="parcel-detail-map" class="map-embed" style="min-height:260px;border-radius:12px;"></div>
+</div>
+
+{% if current_user and current_user.role in ['admin', 'agent'] %}
+<div class="card-panel">
+  <h2 style="margin-top:0;font-size:1.1rem;">Enregistrer un plan de masse</h2>
+  <p class="muted" style="margin-top:0;font-size:0.9rem;">Image (PNG, JPG, WEBP, GIF) ou PDF — visible sur cette fiche.</p>
+  <form method="post" action="{{ url_for('admin_parcel_plan_masse', public_id=parcel.public_id) }}" enctype="multipart/form-data" class="form-grid" style="max-width:420px;">
+    <div>
+      <label for="plan_masse">Fichier</label>
+      <input id="plan_masse" name="plan_masse" type="file" accept="image/jpeg,image/png,image/webp,image/gif,application/pdf" required />
+    </div>
+    <button type="submit" class="btn btn-primary">Enregistrer</button>
+  </form>
+</div>
+{% endif %}
 
 <div class="card-panel">
   <h2 style="margin-top:0;font-size:1.1rem;">Historique</h2>
@@ -38,4 +79,44 @@
     {% endif %}
   </p>
 </div>
+{% endblock %}
+{% block scripts %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script>
+(function () {
+  var el = document.getElementById('parcel-detail-map');
+  if (!el || typeof L === 'undefined') return;
+
+  var lat = {{ parcel.lat|tojson }};
+  var lng = {{ parcel.lng|tojson }};
+  var raw = {{ parcel_polygon_json|tojson }};
+
+  var map = L.map(el, { zoomControl: true, scrollWheelZoom: true }).setView([lat, lng], 17);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; OpenStreetMap',
+  }).addTo(map);
+
+  function ringToLatLngs(ring) {
+    return ring.map(function (c) { return [c[1], c[0]]; });
+  }
+
+  var gj = null;
+  if (raw) {
+    try { gj = JSON.parse(raw); } catch (e) { gj = null; }
+  }
+  if (gj && gj.type === 'Polygon' && gj.coordinates && gj.coordinates[0]) {
+    var latlngs = ringToLatLngs(gj.coordinates[0]);
+    var poly = L.polygon(latlngs, {
+      color: '#c45c26',
+      weight: 2,
+      fillColor: '#f5a623',
+      fillOpacity: 0.28,
+    }).addTo(map);
+    map.fitBounds(poly.getBounds(), { padding: [24, 24], maxZoom: 18 });
+  } else {
+    L.marker([lat, lng]).addTo(map).bindPopup({{ parcel.public_id|tojson }}).openPopup();
+  }
+})();
+</script>
 {% endblock %}
