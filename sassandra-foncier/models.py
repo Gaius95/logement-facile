@@ -109,7 +109,7 @@ class Listing(db.Model):
     price_cfa = db.Column(db.Integer, nullable=True)
     lat = db.Column(db.Float, nullable=True)
     lng = db.Column(db.Float, nullable=True)
-    status = db.Column(db.String(30), nullable=False, default="pending_validation")
+    status = db.Column(db.String(30), nullable=False, default="published")
     created_at = db.Column(db.DateTime, default=utcnow)
     user = db.relationship("User", backref=db.backref("listings", lazy="dynamic"))
 
