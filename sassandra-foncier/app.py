@@ -205,6 +205,8 @@ def seed_if_empty():
                     ],
                 }
             )
+        # Ne pas passer geometry_geojson au constructeur : si Render déploie un vieux models.py
+        # sans ces colonnes, le seed plantait (TypeError). On renseigne après si le modèle les a.
         p = Parcel(
             public_id=pid,
             commune=com,
@@ -215,8 +217,9 @@ def seed_if_empty():
             area_m2=area,
             lat=la,
             lng=ln,
-            geometry_geojson=geom,
         )
+        if geom is not None and getattr(Parcel, "geometry_geojson", None) is not None:
+            p.geometry_geojson = geom
         db.session.add(p)
         db.session.flush()
         db.session.add(
@@ -625,6 +628,7 @@ def listing_new():
                     "error",
                 )
         else:
+            # Publication immédiate (particuliers et entreprises) — pas de file d'attente agent.
             l = Listing(
                 user_id=uid,
                 title=title,
@@ -633,7 +637,7 @@ def listing_new():
                 price_cfa=price_cfa,
                 lat=lat_f,
                 lng=lng_f,
-                status="pending_validation",
+                status="published",
             )
             db.session.add(l)
             db.session.flush()
@@ -654,7 +658,7 @@ def listing_new():
                     "error",
                 )
                 return render_template("listing_new.html")
-            flash("Annonce et photos enregistrees. Validation par un agent avant publication.", "success")
+            flash("Annonce et photos publiées. Elles sont visibles sur la vitrine.", "success")
             return redirect(url_for("listings_list"))
     return render_template("listing_new.html")
 
