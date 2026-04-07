@@ -1,23 +1,49 @@
 {% extends "layout_inner.html" %}
 {% block title %}Nouvelle annonce — {{ app_name }}{% endblock %}
+
 {% block content %}
 <h1 class="page-title">Deposer une annonce</h1>
 <p class="page-lead">
   {% if current_user and current_user.role == 'company' %}
   Compte entreprise : vous pouvez publier plusieurs biens avec photos. Chaque annonce est soumise pour validation par un agent avant publication.
   {% else %}
-  Ajoutez au moins une photo du bien. Soumission pour validation par un agent.
+  Les photos sont obligatoires (au moins une). Soumission pour validation par un agent.
   {% endif %}
 </p>
-<form method="post" enctype="multipart/form-data" class="card-panel form-grid" style="max-width:560px;">
+
+<form id="listingForm" method="post" enctype="multipart/form-data" class="card-panel form-grid" style="max-width:560px;">
+  {# Photos en premier : zone très visible (le champ ne doit pas être « caché » sous la ligne de flottaison) #}
+  <div class="file-upload-block">
+    <p class="file-upload-block__label">Photos du bien — obligatoire</p>
+    <p class="muted" style="margin:0 0 10px;font-size:0.9rem;">
+      Ajoutez une ou plusieurs images : aperçu immédiat, vous pouvez retirer une photo avant l’envoi. Glisser-déposer possible.
+    </p>
+    <div class="listing-photos">
+      <div
+        id="listingPhotoDropzone"
+        class="listing-photos__dropzone file-upload-box"
+        aria-label="Zone pour ajouter des photos : clic ou glisser-déposer"
+      >
+        <input
+          id="images"
+          class="listing-photos__input"
+          name="images"
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/gif"
+          multiple
+          aria-label="Photos du bien, au moins une image"
+        />
+        <span class="listing-photos__dropzone-title">Ajouter des photos</span>
+        <span class="listing-photos__dropzone-sub muted">Cliquez ici ou déposez des fichiers — JPG, PNG, WEBP, GIF</span>
+      </div>
+      <div id="listingPhotoPreviews" class="listing-photos__previews" aria-live="polite"></div>
+    </div>
+    <p id="fileListHint" class="file-upload-names muted" aria-live="polite"></p>
+  </div>
+
   <div>
     <label for="title">Titre du bien</label>
     <input id="title" name="title" type="text" required />
-  </div>
-  <div>
-    <label for="images">Photos du bien <span class="muted">(obligatoire — JPG, PNG, WEBP ou GIF)</span></label>
-    <input id="images" name="images" type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple required />
-    <p class="muted" style="margin:6px 0 0;font-size:0.88rem;">Vous pouvez sélectionner plusieurs fichiers à la fois.</p>
   </div>
   <div>
     <label for="parcel_public_id">Identifiant parcelle (optionnel)</label>
@@ -43,4 +69,7 @@
   </div>
   <button type="submit" class="btn btn-primary">Soumettre</button>
 </form>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/listing-photos.js') }}"></script>
 {% endblock %}
