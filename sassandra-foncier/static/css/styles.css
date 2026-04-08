@@ -144,6 +144,63 @@ a {
   justify-content: flex-end;
 }
 
+.nav-user--with-avatar {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: min(220px, 38vw);
+}
+
+.nav-user__avatar {
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1px solid var(--ring-green-soft);
+  background: var(--green-soft);
+}
+
+.nav-user__name {
+  font-weight: 600;
+  font-size: 0.92rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.company-avatar-preview__img {
+  width: 160px;
+  height: 160px;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 1px solid var(--ring-green-soft);
+}
+
+.listing-publisher-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.listing-publisher-head__avatar {
+  border-radius: 12px;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1px solid var(--ring-green-soft);
+}
+
+.listing-publisher-head__text {
+  flex: 1;
+  min-width: 0;
+}
+
+.parcel-geom-toolbar__btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
 .nav a:not(.btn-nav) {
   padding: 10px 14px;
   font-weight: 600;
