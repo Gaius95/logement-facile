@@ -58,6 +58,21 @@ def ensure_parcel_upload_dir() -> None:
 
 def migrate_parcel_schema() -> None:
     """Ajoute les colonnes plan / géométrie sur les bases déjà existantes (SQLite ou Postgres)."""
+    dialect = db.engine.dialect.name
+    if dialect == "postgresql":
+        # IF NOT EXISTS évite les courses avec inspect() (Render / PG).
+        with db.engine.begin() as conn:
+            conn.execute(
+                text(
+                    "ALTER TABLE parcels ADD COLUMN IF NOT EXISTS geometry_geojson TEXT"
+                )
+            )
+            conn.execute(
+                text(
+                    "ALTER TABLE parcels ADD COLUMN IF NOT EXISTS plan_masse_path VARCHAR(400)"
+                )
+            )
+        return
     try:
         insp = inspect(db.engine)
         cols = {c["name"] for c in insp.get_columns("parcels")}
@@ -93,6 +108,11 @@ def _database_url() -> str:
         return "sqlite:///" + os.path.join(INSTANCE_DIR, "sassandra.db").replace("\\", "/")
     if raw.startswith("postgres://"):
         raw = "postgresql://" + raw[len("postgres://") :]
+    # Postgres distant (Render, etc.) : SSL souvent obligatoire pour eviter erreurs de connexion.
+    if raw.startswith("postgresql") and "sslmode" not in raw.lower():
+        if "localhost" not in raw and "127.0.0.1" not in raw:
+            sep = "&" if "?" in raw else "?"
+            raw = f"{raw}{sep}sslmode=require"
     return raw
 
 
@@ -116,6 +136,7 @@ app = Flask(__name__, static_folder="static", template_folder="templates")
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-sassandra-change-me")
 app.config["SQLALCHEMY_DATABASE_URI"] = _database_url()
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"pool_pre_ping": True}
 app.config["MAX_CONTENT_LENGTH"] = 25 * 1024 * 1024
 
 db.init_app(app)
@@ -137,7 +158,7 @@ def role_required(*roles):
         @wraps(f)
         @login_required
         def w(*args, **kwargs):
-            u = User.query.get(session["user_id"])
+            u = db.session.get(User, session["user_id"])
             if not u or u.role not in roles:
                 abort(403)
             return f(*args, **kwargs)
@@ -154,18 +175,29 @@ def inject_globals():
         path = os.path.join(BASE_DIR, "static", rel.replace("/", os.sep))
         if os.path.isfile(path):
             hero_urls.append(url_for("static", filename=rel))
-    logo_path = os.path.join(BASE_DIR, "static", config.BRAND_LOGO.replace("/", os.sep))
-    brand_logo_url = (
-        url_for("static", filename=config.BRAND_LOGO) if os.path.isfile(logo_path) else None
-    )
+    brand_logo_url = None
+    brand_logo_cache_ver = None
+    for rel in getattr(config, "BRAND_LOGO_FILES", ()):
+        logo_path = os.path.join(BASE_DIR, "static", rel.replace("/", os.sep))
+        if os.path.isfile(logo_path):
+            brand_logo_url = url_for("static", filename=rel)
+            try:
+                brand_logo_cache_ver = str(int(os.path.getmtime(logo_path)))
+            except OSError:
+                brand_logo_cache_ver = "1"
+            break
     uid = session.get("user_id")
-    user = User.query.get(uid) if uid else None
+    if uid is None:
+        user = None
+    else:
+        user = db.session.get(User, uid)
     return {
         "app_name": config.APP_NAME,
         "hero_image_urls": hero_urls,
         "hero_interval_ms": config.HERO_INTERVAL_MS,
         "current_user": user,
         "brand_logo_url": brand_logo_url,
+        "brand_logo_cache_ver": brand_logo_cache_ver,
     }
 
 
@@ -257,14 +289,20 @@ def seed_if_empty():
     if os.path.isfile(hero_demo):
         dst_name = f"{lst.id}_seed.png"
         dst_path = os.path.join(BASE_DIR, "static", LISTING_UPLOAD_REL.replace("/", os.sep), dst_name)
-        shutil.copy2(hero_demo, dst_path)
-        db.session.add(
-            ListingImage(
-                listing_id=lst.id,
-                filename=f"{LISTING_UPLOAD_REL}/{dst_name}",
-                sort_order=0,
+        try:
+            shutil.copy2(hero_demo, dst_path)
+            db.session.add(
+                ListingImage(
+                    listing_id=lst.id,
+                    filename=f"{LISTING_UPLOAD_REL}/{dst_name}",
+                    sort_order=0,
+                )
             )
-        )
+        except OSError:
+            # Render : copie souvent impossible si le deploiement est en lecture seule.
+            app.logger.warning(
+                "Seed: image annonce demo non copiee (disque protege ou lecture seule)."
+            )
     log_audit(agent.id, "seed", "system", None, "Donnees initiales")
     db.session.commit()
 
@@ -472,7 +510,7 @@ def title_pdf(public_id):
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Helvetica", size=14)
-    pdf.cell(0, 10, "Sassandra Foncier - Extrait titre (demo)", ln=1)
+    pdf.cell(0, 10, f"{config.APP_NAME} - Extrait titre (demo)", ln=1)
     pdf.set_font("Helvetica", size=11)
     pdf.cell(0, 8, f"Reference : {title.reference_no}", ln=1)
     pdf.cell(0, 8, f"Parcelle : {p.public_id}", ln=1)
