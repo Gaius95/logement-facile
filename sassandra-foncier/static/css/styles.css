@@ -1,4 +1,4 @@
-/* Sassandra Foncier — blanc, vert et orange (identité La Nawa) */
+/* Le Foncier du Bas-Sassandra — blanc, vert et orange */
 
 :root {
   --green: #1b5e20;
@@ -130,8 +130,9 @@ a {
 .brand--logo img {
   height: 96px;
   width: auto;
-  max-width: min(440px, 92vw);
+  max-width: min(280px, 55vw);
   object-fit: contain;
+  object-position: left center;
   display: block;
 }
 
@@ -960,4 +961,123 @@ table.data th {
   font-size: 0.85rem;
   line-height: 1.4;
   word-break: break-word;
+}
+
+/* Annonce — aperçus photos (style galerie) */
+.listing-photos {
+  margin: 0;
+}
+
+.listing-photos__dropzone {
+  position: relative;
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 6px;
+  padding: 18px 14px;
+}
+
+.listing-photos__dropzone.is-dragover {
+  border-color: var(--orange);
+  background: linear-gradient(180deg, #fff3e6 0%, #ffffff 100%);
+  box-shadow: 0 0 0 2px rgba(245, 124, 0, 0.25);
+}
+
+.listing-photos__input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 2;
+  font-size: 0;
+}
+
+.listing-photos__dropzone-title {
+  position: relative;
+  z-index: 1;
+  font-weight: 700;
+  color: var(--orange-deep);
+  pointer-events: none;
+}
+
+.listing-photos__dropzone-sub {
+  position: relative;
+  z-index: 1;
+  font-size: 0.88rem;
+  line-height: 1.4;
+  pointer-events: none;
+}
+
+.listing-photos__previews {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.listing-photos__tile {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--ring-green-soft);
+  background: var(--green-soft);
+  flex-shrink: 0;
+}
+
+.listing-photos__thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.listing-photos__remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3;
+  padding: 0;
+}
+
+.listing-photos__remove:hover {
+  background: rgba(180, 40, 40, 0.9);
+}
+
+/* Fiche parcelle — plan de masse */
+.parcel-plan-thumb {
+  margin: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--ring-green-soft);
+  max-width: min(100%, 640px);
+}
+
+.parcel-plan-thumb img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 420px;
+  object-fit: contain;
+  background: var(--green-soft);
 }
