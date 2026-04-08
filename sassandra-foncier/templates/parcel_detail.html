@@ -1,4 +1,5 @@
 {% extends "layout_inner.html" %}
+{% set can_edit_geom = current_user and current_user.role in ['admin', 'agent'] %}
 {% block head_extra %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
 {% endblock %}
@@ -9,18 +10,19 @@
 
 <div class="card-panel">
   <h2 style="margin-top:0;font-size:1.1rem;">Informations</h2>
-  <ul style="margin:0;padding-left:1.2rem;line-height:1.7;">
+  <ul id="parcel-info-list" style="margin:0;padding-left:1.2rem;line-height:1.7;">
     <li><strong>Proprietaire (extrait)</strong> : {{ parcel.owner_display or 'Non communique' }}</li>
     <li><strong>Statut</strong> : {{ parcel.status }}</li>
     <li><strong>Usage</strong> : {{ parcel.usage }}</li>
-    <li><strong>Superficie</strong> : {{ parcel.area_m2 }} m²</li>
-    <li><strong>Coordonnees</strong> : {{ parcel.lat|round(5) }}, {{ parcel.lng|round(5) }}</li>
+    <li id="info-area"><strong>Superficie</strong> : <span id="val-area">{{ parcel.area_m2 }}</span> m²</li>
+    <li id="info-coords"><strong>Coordonnees (repere / centre du contour)</strong> : <span id="val-lat">{{ parcel.lat|round(5) }}</span>, <span id="val-lng">{{ parcel.lng|round(5) }}</span></li>
   </ul>
 </div>
 
 {% if plan_masse_url %}
 <div class="card-panel">
-  <h2 style="margin-top:0;font-size:1.1rem;">Plan de masse</h2>
+  <h2 style="margin-top:0;font-size:1.1rem;">Plan de masse (document)</h2>
+  <p class="muted" style="margin-top:0;font-size:0.9rem;">Fichier scanné ou export PDF, distinct du tracé vectoriel sur la carte ci-dessous.</p>
   {% if parcel.plan_masse_path and parcel.plan_masse_path.lower().endswith('.pdf') %}
   <p class="muted" style="margin-top:0;">Fichier PDF enregistré pour cette parcelle.</p>
   <p><a class="btn btn-primary" href="{{ plan_masse_url }}" target="_blank" rel="noopener">Ouvrir le PDF</a></p>
@@ -35,16 +37,32 @@
 {% endif %}
 
 <div class="card-panel">
-  <h2 style="margin-top:0;font-size:1.1rem;">Emplacement</h2>
+  <h2 style="margin-top:0;font-size:1.1rem;">Emplacement &amp; forme du terrain</h2>
   <p class="muted" style="margin:0 0 10px;font-size:0.9rem;">
-    {% if parcel_polygon_json %}Contour enregistré (polygone).{% else %}Point de repère sur la carte.{% endif %}
+    Un terrain se représente par son <strong>contour</strong> (polygone), pas seulement par un point — formes irrégulières possibles.
+    {% if parcel_polygon_json %}Un contour est enregistré.{% else %}Seul un point de repère est défini : tracez un polygone pour le plan de masse sur la carte.{% endif %}
   </p>
-  <div id="parcel-detail-map" class="map-embed" style="min-height:260px;border-radius:12px;"></div>
+  {% if can_edit_geom %}
+  <div class="parcel-geom-toolbar card-panel" style="padding:12px;margin-bottom:12px;">
+    <p class="muted" style="margin:0 0 10px;font-size:0.9rem;">
+      <strong>Agent / admin :</strong> cliquez sur la carte pour placer les sommets du terrain (minimum 3), puis validez le polygone et enregistrez.
+    </p>
+    <div class="parcel-geom-toolbar__btns">
+      <button type="button" class="btn btn-ghost" id="btn-draw-start">Tracer / nouveau contour</button>
+      <button type="button" class="btn btn-ghost" id="btn-draw-close" disabled>Fermer le polygone</button>
+      <button type="button" class="btn btn-primary" id="btn-draw-save" disabled>Enregistrer le contour</button>
+      <button type="button" class="btn btn-ghost" id="btn-draw-cancel" disabled>Annuler le tracé</button>
+      <button type="button" class="btn btn-ghost" id="btn-draw-clear-srv" {% if not parcel_polygon_json %}style="display:none"{% endif %}>Supprimer le contour (garder le point)</button>
+    </div>
+    <p id="parcel-geom-msg" class="muted" style="margin:10px 0 0;font-size:0.85rem;" aria-live="polite"></p>
+  </div>
+  {% endif %}
+  <div id="parcel-detail-map" class="map-embed" style="min-height:320px;border-radius:12px;"></div>
 </div>
 
-{% if current_user and current_user.role in ['admin', 'agent'] %}
+{% if can_edit_geom %}
 <div class="card-panel">
-  <h2 style="margin-top:0;font-size:1.1rem;">Enregistrer un plan de masse</h2>
+  <h2 style="margin-top:0;font-size:1.1rem;">Enregistrer un plan de masse (fichier)</h2>
   <p class="muted" style="margin-top:0;font-size:0.9rem;">Image (PNG, JPG, WEBP, GIF) ou PDF — visible sur cette fiche.</p>
   <form method="post" action="{{ url_for('admin_parcel_plan_masse', public_id=parcel.public_id) }}" enctype="multipart/form-data" class="form-grid" style="max-width:420px;">
     <div>
@@ -90,6 +108,8 @@
   var lat = {{ parcel.lat|tojson }};
   var lng = {{ parcel.lng|tojson }};
   var raw = {{ parcel_polygon_json|tojson }};
+  var canEdit = {{ can_edit_geom|tojson }};
+  var saveUrl = {% if can_edit_geom %}{{ url_for('admin_parcel_geometrie', public_id=parcel.public_id)|tojson }}{% else %}null{% endif %};
 
   var map = L.map(el, { zoomControl: true, scrollWheelZoom: true }).setView([lat, lng], 17);
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -97,26 +117,170 @@
     attribution: '&copy; OpenStreetMap',
   }).addTo(map);
 
+  var drawLayer = L.layerGroup().addTo(map);
+  var draftPts = [];
+  var draftLine = null;
+  var draftPoly = null;
+  var pendingGeo = null;
+  var drawMode = false;
+
   function ringToLatLngs(ring) {
     return ring.map(function (c) { return [c[1], c[0]]; });
   }
 
-  var gj = null;
-  if (raw) {
-    try { gj = JSON.parse(raw); } catch (e) { gj = null; }
+  function latlngsToGeoJSON(latlngs) {
+    if (latlngs.length < 3) return null;
+    var ring = latlngs.map(function (ll) { return [ll.lng, ll.lat]; });
+    ring.push([ring[0][0], ring[0][1]]);
+    return { type: 'Polygon', coordinates: [ring] };
   }
-  if (gj && gj.type === 'Polygon' && gj.coordinates && gj.coordinates[0]) {
-    var latlngs = ringToLatLngs(gj.coordinates[0]);
-    var poly = L.polygon(latlngs, {
-      color: '#c45c26',
+
+  function showMsg(t) {
+    var m = document.getElementById('parcel-geom-msg');
+    if (m) m.textContent = t || '';
+  }
+
+  function clearDraft() {
+    draftPts = [];
+    pendingGeo = null;
+    drawLayer.clearLayers();
+    draftLine = null;
+    draftPoly = null;
+  }
+
+  function loadExistingPolygon() {
+    if (!raw) {
+      L.marker([lat, lng]).addTo(drawLayer).bindPopup({{ parcel.public_id|tojson }});
+      map.setView([lat, lng], 17);
+      return;
+    }
+    try {
+      var gj = JSON.parse(raw);
+      if (gj && gj.type === 'Polygon' && gj.coordinates && gj.coordinates[0]) {
+        var latlngs = ringToLatLngs(gj.coordinates[0]);
+        var pl = L.polygon(latlngs, {
+          color: '#c45c26',
+          weight: 2,
+          fillColor: '#f5a623',
+          fillOpacity: 0.28,
+        }).addTo(drawLayer);
+        map.fitBounds(pl.getBounds(), { padding: [24, 24], maxZoom: 18 });
+        return;
+      }
+    } catch (e) {}
+    L.marker([lat, lng]).addTo(drawLayer).bindPopup({{ parcel.public_id|tojson }});
+    map.setView([lat, lng], 17);
+  }
+
+  if (!canEdit) {
+    loadExistingPolygon();
+    return;
+  }
+
+  var btnStart = document.getElementById('btn-draw-start');
+  var btnClose = document.getElementById('btn-draw-close');
+  var btnSave = document.getElementById('btn-draw-save');
+  var btnCancel = document.getElementById('btn-draw-cancel');
+  var btnClearSrv = document.getElementById('btn-draw-clear-srv');
+
+  function setButtons() {
+    if (!btnClose) return;
+    btnClose.disabled = draftPts.length < 3 || !drawMode || !!pendingGeo;
+    btnSave.disabled = !pendingGeo;
+    btnCancel.disabled = !drawMode && !pendingGeo;
+  }
+
+  loadExistingPolygon();
+
+  btnStart.addEventListener('click', function () {
+    clearDraft();
+    drawLayer.clearLayers();
+    drawMode = true;
+    pendingGeo = null;
+    showMsg('Nouveau tracé : cliquez sur la carte pour placer les sommets du terrain.');
+    setButtons();
+  });
+
+  map.on('click', function (e) {
+    if (!canEdit || !drawMode) return;
+    if (pendingGeo) return;
+    draftPts.push(e.latlng);
+    L.circleMarker(e.latlng, { radius: 5, color: '#c45c26', fillColor: '#fff' }).addTo(drawLayer);
+    if (draftLine) draftLine.remove();
+    draftLine = L.polyline(draftPts, { color: '#c45c26', weight: 2, dashArray: '6 4' }).addTo(drawLayer);
+    showMsg(draftPts.length + ' sommet(s) — fermez le polygone quand la forme est complète.');
+    setButtons();
+  });
+
+  btnClose.addEventListener('click', function () {
+    if (draftPts.length < 3) return;
+    var gj = latlngsToGeoJSON(draftPts);
+    if (!gj) return;
+    pendingGeo = gj;
+    if (draftLine) draftLine.remove();
+    draftLine = null;
+    if (draftPoly) draftPoly.remove();
+    draftPoly = L.polygon(draftPts, {
+      color: '#1b5e20',
       weight: 2,
-      fillColor: '#f5a623',
-      fillOpacity: 0.28,
-    }).addTo(map);
-    map.fitBounds(poly.getBounds(), { padding: [24, 24], maxZoom: 18 });
-  } else {
-    L.marker([lat, lng]).addTo(map).bindPopup({{ parcel.public_id|tojson }}).openPopup();
-  }
+      fillColor: '#43a047',
+      fillOpacity: 0.35,
+    }).addTo(drawLayer);
+    drawMode = false;
+    map.fitBounds(draftPoly.getBounds(), { padding: [28, 28], maxZoom: 18 });
+    showMsg('Polygone prêt — enregistrez pour appliquer au terrain.');
+    setButtons();
+  });
+
+  btnCancel.addEventListener('click', function () {
+    clearDraft();
+    drawLayer.clearLayers();
+    pendingGeo = null;
+    drawMode = false;
+    loadExistingPolygon();
+    showMsg('');
+    setButtons();
+  });
+
+  btnSave.addEventListener('click', function () {
+    if (!pendingGeo || !saveUrl) return;
+    var body = pendingGeo;
+    fetch(saveUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ geometry: body }),
+      credentials: 'same-origin',
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (data.ok) {
+          showMsg('Contour enregistré…');
+          if (btnClearSrv) btnClearSrv.style.display = '';
+          location.reload();
+        } else {
+          showMsg(data.error || 'Erreur');
+        }
+      })
+      .catch(function () {
+        showMsg('Erreur réseau.');
+      });
+  });
+
+  btnClearSrv.addEventListener('click', function () {
+    if (!saveUrl || !confirm('Supprimer le polygone ? Le point de repère restera au centre approximatif.')) return;
+    fetch(saveUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ clear: true }),
+      credentials: 'same-origin',
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (data.ok) location.reload();
+      });
+  });
+
+  setButtons();
 })();
 </script>
 {% endblock %}
