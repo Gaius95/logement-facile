@@ -6,7 +6,10 @@ HERO_IMAGES = [
 
 HERO_INTERVAL_MS = 5000
 
-APP_NAME = "Sassandra Foncier"
+APP_NAME = "Le Foncier du Bas-Sassandra"
 
-# Logo en-tête (La Nawa) : placer le fichier sous static/images/
-BRAND_LOGO = "images/logo-la-nawa.png"
+# Logo en-tête : le premier fichier trouvé dans static/ est utilisé (PNG = votre visuel WhatsApp en priorité).
+BRAND_LOGO_FILES = (
+    "images/logo-bas-sassandra.png",
+    "images/logo-bas-sassandra.svg",
+)
