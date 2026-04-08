@@ -1,6 +1,7 @@
 import hashlib
 import io
 import json
+import math
 import os
 import secrets
 import shutil
@@ -11,6 +12,7 @@ from flask import (
     Flask,
     abort,
     flash,
+    jsonify,
     redirect,
     render_template,
     request,
@@ -42,6 +44,7 @@ INSTANCE_DIR = os.path.join(BASE_DIR, "instance")
 
 LISTING_UPLOAD_REL = "uploads/listings"
 PARCEL_UPLOAD_REL = "uploads/parcels"
+COMPANY_AVATAR_REL = "uploads/avatars"
 ALLOWED_LISTING_IMAGES = frozenset({"png", "jpg", "jpeg", "webp", "gif"})
 ALLOWED_PLAN_MASSE = frozenset({"png", "jpg", "jpeg", "webp", "gif", "pdf"})
 
@@ -54,6 +57,144 @@ def ensure_listing_upload_dir() -> None:
 def ensure_parcel_upload_dir() -> None:
     path = os.path.join(BASE_DIR, "static", PARCEL_UPLOAD_REL.replace("/", os.sep))
     os.makedirs(path, exist_ok=True)
+
+
+def ensure_company_avatar_dir() -> None:
+    path = os.path.join(BASE_DIR, "static", COMPANY_AVATAR_REL.replace("/", os.sep))
+    os.makedirs(path, exist_ok=True)
+
+
+def migrate_company_profile_schema() -> None:
+    """Ajoute avatar_path sur company_profiles (bases déjà existantes)."""
+    dialect = db.engine.dialect.name
+    if dialect == "postgresql":
+        with db.engine.begin() as conn:
+            conn.execute(
+                text(
+                    "ALTER TABLE company_profiles ADD COLUMN IF NOT EXISTS avatar_path VARCHAR(400)"
+                )
+            )
+        return
+    try:
+        insp = inspect(db.engine)
+        cols = {c["name"] for c in insp.get_columns("company_profiles")}
+    except Exception:
+        return
+    with db.engine.begin() as conn:
+        if "avatar_path" not in cols:
+            conn.execute(text("ALTER TABLE company_profiles ADD COLUMN avatar_path VARCHAR(400)"))
+
+
+def optional_single_listing_image(file_storage):
+    """Un fichier image optionnel (ex. avatar), ou None."""
+    if not file_storage or not getattr(file_storage, "filename", None):
+        return None
+    name = file_storage.filename
+    if "." not in name:
+        return None
+    ext = name.rsplit(".", 1)[-1].lower()
+    if ext not in ALLOWED_LISTING_IMAGES:
+        return None
+    return (file_storage, ext)
+
+
+def save_company_avatar_file(file_storage, profile_id: int) -> str | None:
+    """Enregistre l'image et retourne le chemin relatif static, ou None."""
+    got = optional_single_listing_image(file_storage)
+    if not got:
+        return None
+    f, ext = got
+    ensure_company_avatar_dir()
+    fn = f"c{profile_id}_{secrets.token_hex(8)}.{ext}"
+    rel = f"{COMPANY_AVATAR_REL}/{fn}".replace("\\", "/")
+    abs_path = os.path.join(BASE_DIR, "static", *rel.split("/"))
+    f.save(abs_path)
+    return rel
+
+
+def company_avatar_public_url(user) -> str | None:
+    """URL publique de l'avatar entreprise si présent et fichier existant."""
+    if not user or user.role != "company":
+        return None
+    cp = getattr(user, "company_profile", None)
+    if not cp or not cp.avatar_path:
+        return None
+    rel = cp.avatar_path.replace("\\", "/")
+    path = os.path.join(BASE_DIR, "static", *rel.split("/"))
+    if not os.path.isfile(path):
+        return None
+    return url_for("static", filename=rel)
+
+
+def remove_company_avatar_file(rel_path: str | None) -> None:
+    if not rel_path:
+        return
+    abs_path = os.path.join(BASE_DIR, "static", *rel_path.replace("\\", "/").split("/"))
+    try:
+        if os.path.isfile(abs_path):
+            os.remove(abs_path)
+    except OSError:
+        pass
+
+
+def validate_parcel_polygon_geojson(geom: dict) -> dict:
+    """
+    Valide et normalise un GeoJSON Polygon WGS84 (anneau fermé [lng, lat]).
+    Utilisé pour le plan de masse vectoriel (forme réelle du terrain).
+    """
+    if not isinstance(geom, dict) or geom.get("type") != "Polygon":
+        raise ValueError("Un polygone (type Polygon) est requis.")
+    coords = geom.get("coordinates")
+    if not coords or not isinstance(coords, list) or not coords[0]:
+        raise ValueError("coordinates invalides.")
+    ring = coords[0]
+    if len(ring) < 3:
+        raise ValueError("Au moins 3 sommets pour dessiner la forme du terrain.")
+    out = []
+    for p in ring:
+        if not isinstance(p, (list, tuple)) or len(p) < 2:
+            raise ValueError("Chaque sommet doit avoir une longitude et une latitude.")
+        lng, lat = float(p[0]), float(p[1])
+        if not (-180.0 <= lng <= 180.0 and -90.0 <= lat <= 90.0):
+            raise ValueError("Coordonnees WGS84 hors limites.")
+        out.append([lng, lat])
+    if out[0][0] != out[-1][0] or out[0][1] != out[-1][1]:
+        out = out + [out[0]]
+    if len(out) < 4:
+        raise ValueError("Polygone ferme invalide.")
+    return {"type": "Polygon", "coordinates": [out]}
+
+
+def polygon_centroid_lat_lng(gj: dict) -> tuple[float, float]:
+    ring = gj["coordinates"][0]
+    inner = ring[:-1]
+    n = len(inner)
+    slng = sum(p[0] for p in inner) / n
+    slat = sum(p[1] for p in inner) / n
+    return slat, slng
+
+
+def polygon_area_m2_approx(gj: dict) -> float:
+    """Surface approximative en m² (plan tangent au centre — adapté aux parcelles locales)."""
+    ring = gj["coordinates"][0]
+    inner = ring[:-1] if (ring[0][0] == ring[-1][0] and ring[0][1] == ring[-1][1]) else ring
+    if len(inner) < 3:
+        return 0.0
+    lat_c = sum(p[1] for p in inner) / len(inner)
+    lng_c = sum(p[0] for p in inner) / len(inner)
+    R = 6371000.0
+    lat_rad_c = math.radians(lat_c)
+    cos_c = math.cos(lat_rad_c)
+    pts = []
+    for lng, lat in inner:
+        x = R * math.radians(lng - lng_c) * cos_c
+        y = R * math.radians(lat - lat_c)
+        pts.append((x, y))
+    a = 0.0
+    for i in range(len(pts)):
+        j = (i + 1) % len(pts)
+        a += pts[i][0] * pts[j][1] - pts[j][0] * pts[i][1]
+    return abs(a) / 2.0
 
 
 def migrate_parcel_schema() -> None:
@@ -191,6 +332,7 @@ def inject_globals():
         user = None
     else:
         user = db.session.get(User, uid)
+    current_user_company_avatar_url = company_avatar_public_url(user) if user else None
     return {
         "app_name": config.APP_NAME,
         "hero_image_urls": hero_urls,
@@ -198,6 +340,7 @@ def inject_globals():
         "current_user": user,
         "brand_logo_url": brand_logo_url,
         "brand_logo_cache_ver": brand_logo_cache_ver,
+        "current_user_company_avatar_url": current_user_company_avatar_url,
     }
 
 
@@ -332,6 +475,7 @@ def enterprise_register():
         siege = (request.form.get("siege") or "").strip()
         ville = (request.form.get("ville") or "").strip()
         rc = (request.form.get("registre_commerce") or "").strip()
+        avatar_file = request.files.get("avatar")
         if not all([company_name, email, password, siege, ville, rc]):
             flash("Remplis tous les champs obligatoires.", "error")
         elif len(password) < 6:
@@ -343,20 +487,69 @@ def enterprise_register():
             u.set_password(password)
             db.session.add(u)
             db.session.flush()
-            db.session.add(
-                CompanyProfile(
-                    user_id=u.id,
-                    company_name=company_name,
-                    siege=siege,
-                    ville=ville,
-                    registre_commerce=rc,
-                )
+            prof = CompanyProfile(
+                user_id=u.id,
+                company_name=company_name,
+                siege=siege,
+                ville=ville,
+                registre_commerce=rc,
             )
+            db.session.add(prof)
+            db.session.flush()
+            if avatar_file and getattr(avatar_file, "filename", None):
+                try:
+                    rel = save_company_avatar_file(avatar_file, prof.id)
+                    if rel:
+                        prof.avatar_path = rel
+                except OSError:
+                    flash(
+                        "Compte cree. La photo de profil n'a pas pu etre enregistree (disque). "
+                        "Ajoutez-la depuis la page Profil entreprise.",
+                        "info",
+                    )
             db.session.commit()
             session["user_id"] = u.id
             flash("Compte entreprise cree. Vous pouvez publier vos biens.", "success")
             return redirect(url_for("listings_list"))
     return render_template("enterprise_register.html")
+
+
+@app.route("/entreprise/profil", methods=["GET", "POST"])
+@login_required
+def enterprise_profile():
+    uid = session["user_id"]
+    u = db.session.get(User, uid)
+    if not u or u.role != "company":
+        flash("Cette page est reservee aux comptes entreprise.", "error")
+        return redirect(url_for("index"))
+    prof = u.company_profile
+    if not prof:
+        flash("Profil entreprise introuvable.", "error")
+        return redirect(url_for("index"))
+    if request.method == "POST":
+        f = request.files.get("avatar")
+        if not f or not getattr(f, "filename", None):
+            flash("Choisissez une image (JPG, PNG, WEBP ou GIF).", "error")
+        elif not optional_single_listing_image(f):
+            flash("Format accepte : JPG, PNG, WEBP ou GIF.", "error")
+        else:
+            try:
+                ensure_company_avatar_dir()
+                old = prof.avatar_path
+                rel = save_company_avatar_file(f, prof.id)
+                if rel:
+                    prof.avatar_path = rel
+                    db.session.commit()
+                    remove_company_avatar_file(old)
+                    log_audit(uid, "avatar entreprise", "CompanyProfile", str(prof.id), None)
+                    flash("Photo de profil enregistree.", "success")
+                else:
+                    flash("Fichier non valide.", "error")
+            except OSError:
+                flash("Enregistrement impossible sur le serveur.", "error")
+        return redirect(url_for("enterprise_profile"))
+    avatar_url = company_avatar_public_url(u)
+    return render_template("enterprise_profile.html", profile=prof, avatar_url=avatar_url)
 
 
 @app.route("/auth/connexion", methods=["GET", "POST"])
@@ -491,6 +684,44 @@ def admin_parcel_plan_masse(public_id):
     log_audit(session["user_id"], "plan masse parcelle", "Parcel", p.public_id, None)
     flash("Plan de masse enregistre.", "success")
     return redirect(url_for("parcel_detail", public_id=p.public_id))
+
+
+@app.route("/admin/parcelle/<public_id>/geometrie", methods=["POST"])
+@role_required("admin", "agent")
+def admin_parcel_geometrie(public_id):
+    """Enregistre le contour GeoJSON (polygone WGS84) du terrain — plan de masse vectoriel."""
+    p = Parcel.query.filter_by(public_id=public_id.upper()).first_or_404()
+    if not request.is_json:
+        return jsonify({"ok": False, "error": "Content-Type application/json requis."}), 400
+    payload = request.get_json(silent=True) or {}
+    if payload.get("clear"):
+        p.geometry_geojson = None
+        db.session.commit()
+        log_audit(session["user_id"], "geometrie parcelle supprimee", "Parcel", p.public_id, None)
+        return jsonify({"ok": True, "cleared": True})
+    geom = payload.get("geometry")
+    if not geom:
+        return jsonify({"ok": False, "error": "Champ geometry manquant."}), 400
+    try:
+        gj = validate_parcel_polygon_geojson(geom)
+    except ValueError as e:
+        return jsonify({"ok": False, "error": str(e)}), 400
+    lat_c, lng_c = polygon_centroid_lat_lng(gj)
+    area = polygon_area_m2_approx(gj)
+    p.geometry_geojson = json.dumps(gj, separators=(",", ":"))
+    p.lat = lat_c
+    p.lng = lng_c
+    p.area_m2 = round(area, 1)
+    db.session.commit()
+    log_audit(session["user_id"], "geometrie parcelle enregistree", "Parcel", p.public_id, None)
+    return jsonify(
+        {
+            "ok": True,
+            "area_m2": p.area_m2,
+            "lat": p.lat,
+            "lng": p.lng,
+        }
+    )
 
 
 @app.route("/titre/<public_id>")
@@ -729,6 +960,7 @@ def listing_detail(listing_id):
         .all()
     )
     listing_image_urls = [url_for("static", filename=im.filename) for im in imgs]
+    publisher_avatar_url = company_avatar_public_url(publisher)
     return render_template(
         "listing_detail.html",
         listing=l,
@@ -737,6 +969,7 @@ def listing_detail(listing_id):
         user_liked=user_liked,
         publisher_label=publisher_label,
         listing_image_urls=listing_image_urls,
+        publisher_avatar_url=publisher_avatar_url,
     )
 
 
@@ -842,9 +1075,11 @@ def admin_stats():
 with app.app_context():
     db.create_all()
     migrate_parcel_schema()
+    migrate_company_profile_schema()
     seed_if_empty()
     try:
         ensure_listing_upload_dir()
         ensure_parcel_upload_dir()
+        ensure_company_avatar_dir()
     except OSError as exc:
         app.logger.warning("Dossier uploads non cree: %s", exc)
