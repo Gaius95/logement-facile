@@ -22,6 +22,7 @@ from flask import (
 )
 from fpdf import FPDF
 from sqlalchemy import func, inspect, text
+from sqlalchemy.exc import IntegrityError, OperationalError, ProgrammingError
 
 import config
 from models import (
@@ -68,21 +69,35 @@ def migrate_company_profile_schema() -> None:
     """Ajoute avatar_path sur company_profiles (bases déjà existantes)."""
     dialect = db.engine.dialect.name
     if dialect == "postgresql":
-        with db.engine.begin() as conn:
-            conn.execute(
-                text(
-                    "ALTER TABLE company_profiles ADD COLUMN IF NOT EXISTS avatar_path VARCHAR(400)"
+        try:
+            with db.engine.begin() as conn:
+                conn.execute(
+                    text(
+                        "ALTER TABLE company_profiles ADD COLUMN IF NOT EXISTS avatar_path VARCHAR(400)"
+                    )
                 )
-            )
+        except Exception as exc:
+            app.logger.warning("migrate_company_profile_schema (postgres): %s", exc)
         return
+    has_avatar = False
     try:
         insp = inspect(db.engine)
         cols = {c["name"] for c in insp.get_columns("company_profiles")}
-    except Exception:
+        has_avatar = "avatar_path" in cols
+    except Exception as exc:
+        app.logger.debug("migrate_company_profile_schema inspect: %s", exc)
+    if has_avatar:
         return
-    with db.engine.begin() as conn:
-        if "avatar_path" not in cols:
-            conn.execute(text("ALTER TABLE company_profiles ADD COLUMN avatar_path VARCHAR(400)"))
+    try:
+        with db.engine.begin() as conn:
+            conn.execute(
+                text("ALTER TABLE company_profiles ADD COLUMN avatar_path VARCHAR(400)")
+            )
+    except Exception as exc:
+        err = str(exc).lower()
+        if "duplicate" in err or "already exists" in err:
+            return
+        app.logger.warning("migrate_company_profile_schema: %s", exc)
 
 
 def optional_single_listing_image(file_storage):
@@ -117,9 +132,10 @@ def company_avatar_public_url(user) -> str | None:
     if not user or user.role != "company":
         return None
     cp = getattr(user, "company_profile", None)
-    if not cp or not cp.avatar_path:
+    rel_raw = getattr(cp, "avatar_path", None) if cp else None
+    if not rel_raw:
         return None
-    rel = cp.avatar_path.replace("\\", "/")
+    rel = rel_raw.replace("\\", "/")
     path = os.path.join(BASE_DIR, "static", *rel.split("/"))
     if not os.path.isfile(path):
         return None
@@ -468,6 +484,7 @@ def enterprise_hub():
 @app.route("/entreprise/inscription", methods=["GET", "POST"])
 def enterprise_register():
     if request.method == "POST":
+        migrate_company_profile_schema()
         company_name = (request.form.get("company_name") or "").strip()
         email = (request.form.get("email") or "").strip().lower()
         phone = (request.form.get("phone") or "").strip()
@@ -496,7 +513,11 @@ def enterprise_register():
             )
             db.session.add(prof)
             db.session.flush()
-            if avatar_file and getattr(avatar_file, "filename", None):
+            if (
+                avatar_file
+                and getattr(avatar_file, "filename", None)
+                and hasattr(CompanyProfile, "avatar_path")
+            ):
                 try:
                     rel = save_company_avatar_file(avatar_file, prof.id)
                     if rel:
@@ -507,7 +528,17 @@ def enterprise_register():
                         "Ajoutez-la depuis la page Profil entreprise.",
                         "info",
                     )
-            db.session.commit()
+            try:
+                db.session.commit()
+            except (OperationalError, ProgrammingError, IntegrityError):
+                db.session.rollback()
+                app.logger.exception("Inscription entreprise impossible (base de donnees)")
+                flash(
+                    "Erreur lors de l'enregistrement (base de donnees). "
+                    "Si le probleme continue, contactez l'administrateur — la table profil entreprise doit etre a jour.",
+                    "error",
+                )
+                return render_template("enterprise_register.html")
             session["user_id"] = u.id
             flash("Compte entreprise cree. Vous pouvez publier vos biens.", "success")
             return redirect(url_for("listings_list"))
@@ -532,10 +563,15 @@ def enterprise_profile():
             flash("Choisissez une image (JPG, PNG, WEBP ou GIF).", "error")
         elif not optional_single_listing_image(f):
             flash("Format accepte : JPG, PNG, WEBP ou GIF.", "error")
+        elif not hasattr(CompanyProfile, "avatar_path"):
+            flash(
+                "La photo de profil n'est pas disponible sur ce serveur (code a jour requis).",
+                "error",
+            )
         else:
             try:
                 ensure_company_avatar_dir()
-                old = prof.avatar_path
+                old = getattr(prof, "avatar_path", None)
                 rel = save_company_avatar_file(f, prof.id)
                 if rel:
                     prof.avatar_path = rel
