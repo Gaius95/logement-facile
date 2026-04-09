@@ -95,6 +95,8 @@ class CompanyProfile(db.Model):
     siege = db.Column(db.String(300), nullable=False)
     ville = db.Column(db.String(120), nullable=False)
     registre_commerce = db.Column(db.String(120), nullable=False)
+    # Photo de profil : logo entreprise ou photo de la personne (fichier sous static/uploads/avatars/)
+    avatar_path = db.Column(db.String(400), nullable=True)
     user = db.relationship("User", backref=db.backref("company_profile", uselist=False))
 
 
