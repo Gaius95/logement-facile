@@ -1,0 +1,17 @@
+{
+  "name": "paygenius-whatsapp-otp",
+  "version": "1.0.0",
+  "description": "Webhook Pay.Genius → codes BS-XXXXXX → lien WhatsApp",
+  "main": "server.js",
+  "scripts": {
+    "dev": "node --watch server.js",
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2"
+  }
+}
