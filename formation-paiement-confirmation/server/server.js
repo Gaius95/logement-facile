@@ -362,7 +362,20 @@ app.post("/create-payment", async (req, res) => {
       }),
     });
 
-    const result = await response.json();
+    const rawText = await response.text();
+    console.log("Réponse brute GeniusPay :", rawText.slice(0, 1000));
+
+    let result;
+    try {
+      result = JSON.parse(rawText);
+    } catch (e) {
+      return res.status(500).json({
+        success: false,
+        message: "GeniusPay n'a pas renvoyé du JSON",
+        status: response.status,
+        preview: rawText.slice(0, 300)
+      });
+    }
     console.log("Paiement créé :", result);
 
     if (!result.success) {
