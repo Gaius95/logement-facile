@@ -1,12 +1,13 @@
 /**
  * Serveur Pay.Genius → OTP (BS-XXXXXX) → WhatsApp
- * Stockage temporaire en mémoire (Map), sans base de données.
+ * Stockage persistant PostgreSQL (table paiements).
  */
 
 require("dotenv").config();
 
 const express = require("express");
 const cors = require("cors");
+const { Pool } = require("pg");
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
@@ -16,11 +17,19 @@ const PUBLIC_BASE_URL = String(process.env.PUBLIC_BASE_URL || `http://localhost:
   ""
 );
 
-/** @type {Map<string, { code: string, nom: string|null, telephone: string|null, montant: string|null, date: string, used: boolean }>} */
-const codesStore = new Map();
+const DATABASE_URL = process.env.DATABASE_URL;
 
-/** Référence de paiement GeniusPay → code déjà généré (anti-doublon) */
-const referencesStore = new Map();
+if (!DATABASE_URL) {
+  console.error("DATABASE_URL manquante — configurez la variable d'environnement.");
+  process.exit(1);
+}
+
+const pool = new Pool({
+  connectionString: DATABASE_URL,
+  ssl: DATABASE_URL.includes("localhost") || DATABASE_URL.includes("127.0.0.1")
+    ? false
+    : { rejectUnauthorized: false },
+});
 
 const SUCCESS_STATUS_VALUES = new Set([
   "success",
@@ -33,9 +42,11 @@ const SUCCESS_STATUS_VALUES = new Set([
   "valid",
   "approved",
   "approve",
+  "payment.success",
 ]);
 
 const STATUS_FIELD_NAMES = ["status", "statut", "payment_status", "transaction_status"];
+const EVENT_FIELD_NAMES = ["event", "type", "event_type", "action"];
 
 // ——— Middleware ———
 app.use(cors());
@@ -43,7 +54,7 @@ app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true }));
 
 /**
- * Parcourt un objet (et sous-objets) pour trouver la première valeur d’une clé (insensible à la casse).
+ * Parcourt un objet (et sous-objets) pour trouver la première valeur d'une clé (insensible à la casse).
  */
 function findValueByKey(obj, keyName, depth = 0) {
   if (!obj || typeof obj !== "object" || depth > 6) return undefined;
@@ -64,9 +75,18 @@ function findValueByKey(obj, keyName, depth = 0) {
 }
 
 /**
- * Indique si le payload webhook signale un paiement confirmé.
+ * Indique si le payload webhook signale un paiement confirmé (payment.success ou statut réussi).
  */
 function isPaymentConfirmed(payload) {
+  for (const field of EVENT_FIELD_NAMES) {
+    const raw = findValueByKey(payload, field);
+    if (raw == null) continue;
+    const normalized = String(raw).toLowerCase().trim();
+    if (normalized === "payment.success" || normalized === "payment_success") {
+      return true;
+    }
+  }
+
   for (const field of STATUS_FIELD_NAMES) {
     const raw = findValueByKey(payload, field);
     if (raw == null) continue;
@@ -79,7 +99,7 @@ function isPaymentConfirmed(payload) {
 }
 
 /**
- * Extrait nom, téléphone et montant depuis le payload (plusieurs noms possibles).
+ * Extrait nom, email, téléphone et montant depuis le payload (plusieurs noms possibles).
  */
 function extractCustomerData(payload) {
   const nom =
@@ -87,6 +107,12 @@ function extractCustomerData(payload) {
     findValueByKey(payload, "name") ||
     findValueByKey(payload, "customer_name") ||
     findValueByKey(payload, "client_name") ||
+    null;
+
+  const email =
+    findValueByKey(payload, "email") ||
+    findValueByKey(payload, "customer_email") ||
+    findValueByKey(payload, "client_email") ||
     null;
 
   const telephone =
@@ -106,36 +132,124 @@ function extractCustomerData(payload) {
 
   return {
     nom: nom != null ? String(nom).trim() : null,
+    email: email != null ? String(email).trim() : null,
     telephone: telephone != null ? String(telephone).trim() : null,
     montant: montant != null ? String(montant).trim() : null,
   };
 }
 
+function extractPaymentStatus(payload) {
+  for (const field of [...EVENT_FIELD_NAMES, ...STATUS_FIELD_NAMES]) {
+    const raw = findValueByKey(payload, field);
+    if (raw != null && String(raw).trim() !== "") {
+      return String(raw).trim();
+    }
+  }
+  return "success";
+}
+
 /**
  * Génère un code unique BS-XXXXXX (6 caractères alphanumériques).
  */
-function generateUniqueCode() {
+async function generateUniqueCode() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let code;
   let attempts = 0;
 
-  do {
+  while (attempts < 50) {
     let suffix = "";
     for (let i = 0; i < 6; i++) {
       suffix += chars[Math.floor(Math.random() * chars.length)];
     }
-    code = `BS-${suffix}`;
-    attempts++;
-    if (attempts > 50) {
-      throw new Error("Impossible de générer un code unique après plusieurs tentatives.");
-    }
-  } while (codesStore.has(code));
+    const code = `BS-${suffix}`;
 
-  return code;
+    const existing = await pool.query("SELECT 1 FROM paiements WHERE code = $1 LIMIT 1", [code]);
+    if (existing.rowCount === 0) {
+      return code;
+    }
+    attempts++;
+  }
+
+  throw new Error("Impossible de générer un code unique après plusieurs tentatives.");
+}
+
+async function initDatabase() {
+  const client = await pool.connect();
+  try {
+    console.log("Connexion PostgreSQL réussie");
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS paiements (
+        id SERIAL PRIMARY KEY,
+        reference VARCHAR(255) UNIQUE NOT NULL,
+        code VARCHAR(20) NOT NULL UNIQUE,
+        nom_client VARCHAR(255),
+        email_client VARCHAR(255),
+        telephone_client VARCHAR(50),
+        montant VARCHAR(50),
+        statut VARCHAR(100),
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+
+    console.log("Création automatique de la table paiements (OK)");
+  } finally {
+    client.release();
+  }
+}
+
+async function findPaiementByReference(reference) {
+  const result = await pool.query(
+    "SELECT * FROM paiements WHERE reference = $1 LIMIT 1",
+    [String(reference)]
+  );
+  return result.rows[0] || null;
+}
+
+async function findPaiementByCode(code) {
+  const result = await pool.query(
+    "SELECT * FROM paiements WHERE code = $1 LIMIT 1",
+    [code]
+  );
+  return result.rows[0] || null;
+}
+
+async function insertPaiement({ reference, code, nom, email, telephone, montant, statut }) {
+  const result = await pool.query(
+    `INSERT INTO paiements (reference, code, nom_client, email_client, telephone_client, montant, statut)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)
+     RETURNING *`,
+    [reference, code, nom, email, telephone, montant, statut]
+  );
+  return result.rows[0];
+}
+
+function mapPaiementToVerifyResponse(row) {
+  return {
+    code: row.code,
+    nom: row.nom_client,
+    telephone: row.telephone_client,
+    montant: row.montant,
+    date: row.created_at,
+    used: false,
+  };
+}
+
+function mapPaiementToListItem(row) {
+  return {
+    code: row.code,
+    nom: row.nom_client,
+    email: row.email_client,
+    telephone: row.telephone_client,
+    montant: row.montant,
+    statut: row.statut,
+    reference: row.reference,
+    date: row.created_at,
+    used: false,
+  };
 }
 
 /**
- * Construit le message WhatsApp avec le code d’accès.
+ * Construit le message WhatsApp avec le code d'accès.
  */
 function buildWhatsAppMessage(code) {
   return `Bonjour Blake Service, j'ai payé. Voici mon code d'accès : ${code}`;
@@ -159,11 +273,21 @@ function normalizeCodeParam(raw) {
   return code;
 }
 
+function buildPaymentResponse(code) {
+  return {
+    success: true,
+    code,
+    verifyUrl: `${PUBLIC_BASE_URL}/verify-code?code=${encodeURIComponent(code)}`,
+    whatsappUrl: buildWhatsAppUrl(code),
+  };
+}
+
 // ——— Santé ———
 app.get("/", (_req, res) => {
   res.json({
     ok: true,
     service: "paygenius-whatsapp-otp",
+    storage: "postgresql",
     endpoints: [
       "POST /create-payment",
       "POST /webhook",
@@ -184,7 +308,7 @@ app.post("/webhook", (req, res) => {
 });
 
 // ——— 1. Webhook Pay.Genius (OTP + codes) ———
-app.post("/webhook-paygenius", (req, res) => {
+app.post("/webhook-paygenius", async (req, res) => {
   try {
     const payload = req.body ?? {};
 
@@ -199,51 +323,44 @@ app.post("/webhook-paygenius", (req, res) => {
       });
     }
 
-    // Identifiant unique du paiement (data.reference)
     const reference = findValueByKey(payload, "reference");
 
-    // Anti-doublon : un seul code par reference
-    if (reference != null && referencesStore.has(String(reference))) {
-      const existingCode = referencesStore.get(String(reference));
-      console.log(`[webhook-paygenius] Paiement déjà traité (reference: ${reference}, code: ${existingCode})`);
-      return res.status(200).json({
-        success: true,
-        message: "déjà traité",
-        code: existingCode,
-        verifyUrl: `${PUBLIC_BASE_URL}/verify-code?code=${encodeURIComponent(existingCode)}`,
-        whatsappUrl: buildWhatsAppUrl(existingCode),
+    if (reference == null || String(reference).trim() === "") {
+      console.log("[webhook-paygenius] Référence manquante — impossible d'enregistrer le paiement.");
+      return res.status(400).json({
+        success: false,
+        message: "Référence de paiement manquante",
       });
     }
 
-    const { nom, telephone, montant } = extractCustomerData(payload);
-    const code = generateUniqueCode();
-    const date = new Date().toISOString();
+    const referenceKey = String(reference).trim();
+    const existing = await findPaiementByReference(referenceKey);
 
-    const record = {
-      code,
-      nom,
-      telephone,
-      montant,
-      date,
-      used: false,
-    };
-
-    codesStore.set(code, record);
-    if (reference != null) {
-      referencesStore.set(String(reference), code);
+    if (existing) {
+      console.log(`Paiement déjà existant (reference: ${referenceKey}, code: ${existing.code})`);
+      return res.status(200).json({
+        ...buildPaymentResponse(existing.code),
+        message: "déjà traité",
+      });
     }
 
-    const verifyUrl = `${PUBLIC_BASE_URL}/verify-code?code=${encodeURIComponent(code)}`;
-    const whatsappUrl = buildWhatsAppUrl(code);
+    const { nom, email, telephone, montant } = extractCustomerData(payload);
+    const statut = extractPaymentStatus(payload);
+    const code = await generateUniqueCode();
 
-    console.log(`[webhook-paygenius] Code créé : ${code} pour ${nom || "client inconnu"}`);
-
-    return res.status(200).json({
-      success: true,
+    await insertPaiement({
+      reference: referenceKey,
       code,
-      verifyUrl,
-      whatsappUrl,
+      nom,
+      email,
+      telephone,
+      montant,
+      statut,
     });
+
+    console.log(`Paiement enregistré (reference: ${referenceKey}, code: ${code}, client: ${nom || "inconnu"})`);
+
+    return res.status(200).json(buildPaymentResponse(code));
   } catch (err) {
     console.error("[webhook-paygenius] Erreur :", err);
     return res.status(500).json({
@@ -255,7 +372,7 @@ app.post("/webhook-paygenius", (req, res) => {
 });
 
 // ——— 2. Vérifier un code ———
-app.get("/verify-code", (req, res) => {
+app.get("/verify-code", async (req, res) => {
   try {
     const code = normalizeCodeParam(req.query.code);
 
@@ -267,7 +384,7 @@ app.get("/verify-code", (req, res) => {
       });
     }
 
-    const record = codesStore.get(code);
+    const record = await findPaiementByCode(code);
 
     if (!record) {
       return res.status(404).json({
@@ -279,14 +396,7 @@ app.get("/verify-code", (req, res) => {
     return res.status(200).json({
       success: true,
       message: "CODE_VALIDE",
-      data: {
-        code: record.code,
-        nom: record.nom,
-        telephone: record.telephone,
-        montant: record.montant,
-        date: record.date,
-        used: record.used,
-      },
+      data: mapPaiementToVerifyResponse(record),
     });
   } catch (err) {
     console.error("[verify-code] Erreur :", err);
@@ -299,7 +409,7 @@ app.get("/verify-code", (req, res) => {
 });
 
 // ——— 3. Lien WhatsApp pour un code ———
-app.get("/generate-link", (req, res) => {
+app.get("/generate-link", async (req, res) => {
   try {
     const code = normalizeCodeParam(req.query.code);
 
@@ -311,7 +421,7 @@ app.get("/generate-link", (req, res) => {
       });
     }
 
-    const record = codesStore.get(code);
+    const record = await findPaiementByCode(code);
 
     if (!record) {
       return res.status(404).json({
@@ -337,10 +447,14 @@ app.get("/generate-link", (req, res) => {
   }
 });
 
-// ——— 4. Liste des codes (test local uniquement) ———
-app.get("/codes", (_req, res) => {
+// ——— 4. Liste des codes (test) ———
+app.get("/codes", async (_req, res) => {
   try {
-    const list = Array.from(codesStore.values());
+    const result = await pool.query(
+      "SELECT * FROM paiements ORDER BY created_at DESC"
+    );
+    const list = result.rows.map(mapPaiementToListItem);
+
     return res.status(200).json({
       success: true,
       count: list.length,
@@ -395,7 +509,7 @@ app.post("/create-payment", async (req, res) => {
         success: false,
         message: "GeniusPay n'a pas renvoyé du JSON",
         status: response.status,
-        preview: rawText.slice(0, 300)
+        preview: rawText.slice(0, 300),
       });
     }
     console.log("Paiement créé :", result);
@@ -412,11 +526,22 @@ app.post("/create-payment", async (req, res) => {
 });
 
 // ——— Démarrage ———
-app.listen(PORT, () => {
-  console.log(`Serveur OTP Pay.Genius → WhatsApp : ${PUBLIC_BASE_URL}`);
-  console.log(`Webhook : POST ${PUBLIC_BASE_URL}/webhook`);
-  console.log(`Webhook OTP : POST ${PUBLIC_BASE_URL}/webhook-paygenius`);
-  if (!WHATSAPP_NUMBER) {
-    console.warn("⚠️  WHATSAPP_NUMBER non défini — configurez le fichier .env");
+async function start() {
+  try {
+    await initDatabase();
+
+    app.listen(PORT, () => {
+      console.log(`Serveur OTP Pay.Genius → WhatsApp : ${PUBLIC_BASE_URL}`);
+      console.log(`Webhook : POST ${PUBLIC_BASE_URL}/webhook`);
+      console.log(`Webhook OTP : POST ${PUBLIC_BASE_URL}/webhook-paygenius`);
+      if (!WHATSAPP_NUMBER) {
+        console.warn("⚠️  WHATSAPP_NUMBER non défini — configurez le fichier .env");
+      }
+    });
+  } catch (err) {
+    console.error("Échec de l'initialisation PostgreSQL :", err);
+    process.exit(1);
   }
-});
+}
+
+start();
