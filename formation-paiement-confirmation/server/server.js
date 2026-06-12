@@ -19,6 +19,9 @@ const PUBLIC_BASE_URL = String(process.env.PUBLIC_BASE_URL || `http://localhost:
 /** @type {Map<string, { code: string, nom: string|null, telephone: string|null, montant: string|null, date: string, used: boolean }>} */
 const codesStore = new Map();
 
+/** Référence de paiement GeniusPay → code déjà généré (anti-doublon) */
+const referencesStore = new Map();
+
 const SUCCESS_STATUS_VALUES = new Set([
   "success",
   "succeeded",
@@ -196,6 +199,22 @@ app.post("/webhook-paygenius", (req, res) => {
       });
     }
 
+    // Identifiant unique du paiement (data.reference)
+    const reference = findValueByKey(payload, "reference");
+
+    // Anti-doublon : un seul code par reference
+    if (reference != null && referencesStore.has(String(reference))) {
+      const existingCode = referencesStore.get(String(reference));
+      console.log(`[webhook-paygenius] Paiement déjà traité (reference: ${reference}, code: ${existingCode})`);
+      return res.status(200).json({
+        success: true,
+        message: "déjà traité",
+        code: existingCode,
+        verifyUrl: `${PUBLIC_BASE_URL}/verify-code?code=${encodeURIComponent(existingCode)}`,
+        whatsappUrl: buildWhatsAppUrl(existingCode),
+      });
+    }
+
     const { nom, telephone, montant } = extractCustomerData(payload);
     const code = generateUniqueCode();
     const date = new Date().toISOString();
@@ -210,6 +229,9 @@ app.post("/webhook-paygenius", (req, res) => {
     };
 
     codesStore.set(code, record);
+    if (reference != null) {
+      referencesStore.set(String(reference), code);
+    }
 
     const verifyUrl = `${PUBLIC_BASE_URL}/verify-code?code=${encodeURIComponent(code)}`;
     const whatsappUrl = buildWhatsAppUrl(code);
