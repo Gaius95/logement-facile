@@ -347,8 +347,8 @@ app.post("/create-payment", async (req, res) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        amount: 500,
-        description: "Formation IA - Test 500F",
+        amount: 3700,
+        description: "Formation IA - Accès formation 3700F",
         success_url: `${PUBLIC_BASE_URL}/confirmation.html`,
         error_url: `${PUBLIC_BASE_URL}/`,
         customer: {
@@ -357,7 +357,7 @@ app.post("/create-payment", async (req, res) => {
           phone: req.body.phone || "",
         },
         metadata: {
-          product: "formation-ia-test",
+          product: "formation-ia-3700",
         },
       }),
     });
