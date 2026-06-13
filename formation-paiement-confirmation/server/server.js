@@ -531,6 +531,8 @@ async function start() {
     await initDatabase();
 
     app.listen(PORT, () => {
+      console.log("GENIUSPAY_BASE_URL =", process.env.GENIUSPAY_BASE_URL || "(absent)");
+      console.log("GENIUSPAY_API_KEY =", (process.env.GENIUSPAY_API_KEY || "").slice(0, 10) + "...");
       console.log(`Serveur OTP Pay.Genius → WhatsApp : ${PUBLIC_BASE_URL}`);
       console.log(`Webhook : POST ${PUBLIC_BASE_URL}/webhook`);
       console.log(`Webhook OTP : POST ${PUBLIC_BASE_URL}/webhook-paygenius`);
