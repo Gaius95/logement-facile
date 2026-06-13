@@ -284,19 +284,7 @@ function buildPaymentResponse(code) {
 
 // ——— Santé ———
 app.get("/", (_req, res) => {
-  res.json({
-    ok: true,
-    service: "paygenius-whatsapp-otp",
-    storage: "postgresql",
-    endpoints: [
-      "POST /create-payment",
-      "POST /webhook",
-      "POST /webhook-paygenius",
-      "GET /verify-code?code=BS-XXXXXX",
-      "GET /generate-link?code=BS-XXXXXX",
-      "GET /codes",
-    ],
-  });
+  res.sendFile(path.join(__dirname, "..", "index.html"));
 });
 
 // ——— Webhook Pay.Genius (URL courte) ———
@@ -547,3 +535,4 @@ async function start() {
 }
 
 start();
+
