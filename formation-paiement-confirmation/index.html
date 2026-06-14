@@ -48,7 +48,7 @@
           <a
             class="btn btn--checkout btn--pulse js-pay-genius-checkout"
             id="checkout-hero"
-            href="/create-payment"
+            href="https://geniuspay.ci/checkout/MTX-AM3HJUZANX"
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -75,7 +75,7 @@
         <a
           class="btn btn--checkout btn--pulse js-pay-genius-checkout"
           id="checkout-urgent"
-          href="/create-payment"
+          href="https://geniuspay.ci/checkout/MTX-AM3HJUZANX"
           target="_blank"
           rel="noopener noreferrer"
         >
@@ -168,7 +168,7 @@
           <a
             class="btn btn--checkout btn--xl btn--pulse js-pay-genius-checkout"
             id="checkout-price"
-            href="/create-payment"
+            href="https://geniuspay.ci/checkout/MTX-AM3HJUZANX"
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -264,7 +264,7 @@
         <a
           class="btn btn--checkout btn--sticky btn--pulse js-pay-genius-checkout"
           id="checkout-sticky"
-          href="/create-payment"
+          href="https://geniuspay.ci/checkout/MTX-AM3HJUZANX"
           target="_blank"
           rel="noopener noreferrer"
         >
@@ -278,7 +278,7 @@
         const PRICE = "3 700 F CFA";
         /** À remplacer par l’URL de checkout fournie par Pay.Genius. Tant que vide : ancre #paiement. */
         const PAY_GENIUS_CHECKOUT_URL =
-          "/create-payment";
+          "https://geniuspay.ci/checkout/MTX-AM3HJUZANX";
         const m = String(PRICE).match(/^(.+)\s+(F\s*CFA)$/i);
         const priceAmount = m ? m[1].trim() : PRICE;
         const priceCurrency = m ? m[2].replace(/\s+/g, " ") : "";
@@ -323,7 +323,7 @@ document.querySelectorAll(".js-pay-genius-checkout").forEach((btn) => {
   btn.addEventListener("click", async (e) => {
     e.preventDefault();
     btn.textContent = "Cr�ation du paiement...";
-    const res = await fetch("/create-payment", {
+    const res = await fetch("https://geniuspay.ci/checkout/MTX-AM3HJUZANX", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -344,6 +344,7 @@ document.querySelectorAll(".js-pay-genius-checkout").forEach((btn) => {
 </script>
 </body>
 </html>
+
 
 
 
