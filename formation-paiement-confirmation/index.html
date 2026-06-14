@@ -46,7 +46,7 @@
         <div class="hero__cta-row">
           <div class="payment-actions payment-actions--hero">
           <a
-            class="btn btn--checkout btn--pulse js-pay-genius-checkout"
+            class="btn btn--checkout btn--pulse pay-link-direct"
             id="checkout-hero"
             href="https://geniuspay.ci/checkout/MTX-AM3HJUZANX"
             target="_blank"
@@ -73,7 +73,7 @@
         </p>
         <div class="payment-actions payment-actions--banner">
         <a
-          class="btn btn--checkout btn--pulse js-pay-genius-checkout"
+          class="btn btn--checkout btn--pulse pay-link-direct"
           id="checkout-urgent"
           href="https://geniuspay.ci/checkout/MTX-AM3HJUZANX"
           target="_blank"
@@ -166,7 +166,7 @@
           </p>
           <div class="payment-actions payment-actions--card">
           <a
-            class="btn btn--checkout btn--xl btn--pulse js-pay-genius-checkout"
+            class="btn btn--checkout btn--xl btn--pulse pay-link-direct"
             id="checkout-price"
             href="https://geniuspay.ci/checkout/MTX-AM3HJUZANX"
             target="_blank"
@@ -262,7 +262,7 @@
           <span class="sticky-pay__sub">Formation complète · Pay.Genius</span>
         </div>
         <a
-          class="btn btn--checkout btn--sticky btn--pulse js-pay-genius-checkout"
+          class="btn btn--checkout btn--sticky btn--pulse pay-link-direct"
           id="checkout-sticky"
           href="https://geniuspay.ci/checkout/MTX-AM3HJUZANX"
           target="_blank"
@@ -313,13 +313,14 @@
 
         document
           .querySelectorAll(
-            "a.js-pay-genius-checkout, a.btn--checkout[id^='checkout-']"
+            "a.pay-link-direct, a.btn--checkout[id^='checkout-']"
           )
           .forEach(applyPayGeniusLink);
       })();
     </script>
   </body>
 </html>
+
 
 
 
