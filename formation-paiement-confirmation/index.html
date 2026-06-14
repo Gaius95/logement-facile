@@ -342,8 +342,29 @@ document.querySelectorAll(".js-pay-genius-checkout").forEach((btn) => {
   });
 });
 </script>
+<script id="force-post-payment">
+document.addEventListener("click", function (e) {
+  const btn = e.target.closest("a.js-pay-genius-checkout, a.btn--checkout[id^='checkout-']");
+  if (!btn) return;
+
+  e.preventDefault();
+  e.stopPropagation();
+
+  if (btn.dataset.loading === "1") return;
+  btn.dataset.loading = "1";
+  btn.textContent = "Création du paiement...";
+
+  const form = document.createElement("form");
+  form.method = "POST";
+  form.action = "/create-payment";
+  form.style.display = "none";
+  document.body.appendChild(form);
+  form.submit();
+}, true);
+</script>
 </body>
 </html>
+
 
 
 
