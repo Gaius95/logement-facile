@@ -417,6 +417,8 @@ document.querySelectorAll(".js-pay-genius-checkout").forEach((btn) => {
 
       const checkoutUrl = findCheckoutUrl(data);
 
+      const checkoutUrl = findCheckoutUrl(data);
+
       if (!res.ok || !checkoutUrl) {
         console.error("Réponse /create-payment :", data);
         throw new Error("checkout_url introuvable");
@@ -434,6 +436,7 @@ document.querySelectorAll(".js-pay-genius-checkout").forEach((btn) => {
 </script>
 </body>
 </html>
+
 
 
 
