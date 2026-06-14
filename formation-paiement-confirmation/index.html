@@ -342,28 +342,99 @@ document.querySelectorAll(".js-pay-genius-checkout").forEach((btn) => {
   });
 });
 </script>
-<script id="force-post-payment">
-document.addEventListener("click", function (e) {
-  const btn = e.target.closest("a.js-pay-genius-checkout, a.btn--checkout[id^='checkout-']");
-  if (!btn) return;
+<script id="direct-gp-payment">
+(function () {
+  function findCheckoutUrl(value) {
+    if (!value) return "";
+    if (typeof value === "string") {
+      return value.includes("geniuspay.ci/checkout/") ? value : "";
+    }
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        const found = findCheckoutUrl(item);
+        if (found) return found;
+      }
+      return "";
+    }
+    if (typeof value === "object") {
+      for (const key of ["checkout_url", "payment_url", "redirect_url", "url"]) {
+        const found = findCheckoutUrl(value[key]);
+        if (found) return found;
+      }
+      for (const item of Object.values(value)) {
+        const found = findCheckoutUrl(item);
+        if (found) return found;
+      }
+    }
+    return "";
+  }
 
-  e.preventDefault();
-  e.stopPropagation();
+  document.addEventListener("click", async function (e) {
+    const btn = e.target.closest("a, button");
+    if (!btn) return;
 
-  if (btn.dataset.loading === "1") return;
-  btn.dataset.loading = "1";
-  btn.textContent = "Création du paiement...";
+    const text = (btn.textContent || "").toLowerCase();
+    const href = btn.getAttribute("href") || "";
 
-  const form = document.createElement("form");
-  form.method = "POST";
-  form.action = "/create-payment";
-  form.style.display = "none";
-  document.body.appendChild(form);
-  form.submit();
-}, true);
+    const isPayButton =
+      btn.classList.contains("js-pay-genius-checkout") ||
+      href.includes("/create-payment") ||
+      text.includes("payer");
+
+    if (!isPayButton) return;
+
+    e.preventDefault();
+    e.stopImmediatePropagation();
+
+    if (btn.dataset.loading === "1") return;
+
+    btn.dataset.loading = "1";
+    const oldText = btn.textContent;
+    btn.textContent = "Création du paiement...";
+
+    try {
+      const res = await fetch("/create-payment", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        body: JSON.stringify({
+          name: "Client",
+          phone: "+2250140707502",
+          email: "client@example.com"
+        })
+      });
+
+      const raw = await res.text();
+      let data;
+
+      try {
+        data = JSON.parse(raw);
+      } catch {
+        data = raw;
+      }
+
+      const checkoutUrl = findCheckoutUrl(data);
+
+      if (!res.ok || !checkoutUrl) {
+        console.error("Réponse /create-payment :", data);
+        throw new Error("checkout_url introuvable");
+      }
+
+      window.location.href = checkoutUrl;
+    } catch (err) {
+      console.error(err);
+      alert("Erreur paiement : " + err.message);
+      btn.dataset.loading = "0";
+      btn.textContent = oldText;
+    }
+  }, true);
+})();
 </script>
 </body>
 </html>
+
 
 
 
