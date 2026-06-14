@@ -283,7 +283,7 @@
         const priceAmount = m ? m[1].trim() : PRICE;
         const priceCurrency = m ? m[2].replace(/\s+/g, " ") : "";
 
-        const checkoutUrl = String(PAY_GENIUS_CHECKOUT_URL).trim() || "#paiement";
+        const checkoutUrl = "https://geniuspay.ci/checkout/MTX-AM3HJUZANX";
 
         document.querySelectorAll("[data-price-cta]").forEach(function (el) {
           el.textContent = PRICE;
@@ -344,6 +344,7 @@ document.querySelectorAll(".js-pay-genius-checkout").forEach((btn) => {
 </script>
 </body>
 </html>
+
 
 
 
