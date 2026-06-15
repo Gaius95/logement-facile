@@ -1,107 +1,83 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="fr">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#070708" />
-    <meta
-      name="description"
-      content="Paiement validé — active ton accès formation vidéos IA sur WhatsApp."
-    />
-    <title>Paiement validé — Active ton accès formation</title>
-    <link rel="stylesheet" href="styles.css" />
-    <!--
-      Tunnel APRÈS paiement : configurer cette URL comme page de retour / succès Pay.Genius.
-      WhatsApp uniquement sur cette page (js-whatsapp-access).
-    -->
-  </head>
-  <body class="page-confirmation">
-    <a class="skip-link" href="#main">Aller au contenu</a>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Paiement validé</title>
+  <style>
+    body{font-family:Arial,sans-serif;background:#070708;color:white;margin:0;padding:40px}
+    .box{max-width:760px;margin:auto;background:#111827;padding:30px;border-radius:18px;text-align:center}
+    .code{font-size:32px;font-weight:900;background:#facc15;color:#111827;padding:18px;border-radius:14px;margin:20px 0}
+    a{display:block;background:#22c55e;color:white;text-decoration:none;padding:16px;border-radius:12px;font-weight:800;margin-top:18px}
+    .error{color:#f87171;font-weight:700}
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h1>Paiement validé</h1>
+    <p>Génération de votre code d’accès...</p>
 
-    <header class="site-header" role="banner">
-      <div class="site-header__inner">
-        <span class="logo-mark" aria-hidden="true">◆</span>
-        <span class="logo-text">Formation · Vidéos IA</span>
-      </div>
-    </header>
+    <div id="resultat">Veuillez patienter...</div>
 
-    <main id="main" class="main main--confirmation" tabindex="-1">
-      <section class="section section--confirmation" aria-labelledby="confirm-title">
-        <p class="confirm-eyebrow" role="status">Étape 2 sur 2 — après Pay.Genius</p>
-        <h1 id="confirm-title" class="confirm-title">Paiement validé</h1>
-        <p class="confirm-lead">
-          Merci. Ton paiement Pay.Genius est enregistré. Pour recevoir la formation, il reste une étape
-          <strong>obligatoire</strong> : activer ton accès sur WhatsApp.
-        </p>
-        <p class="afterpay-badge" role="status">
-          <span class="afterpay-badge__icon" aria-hidden="true">⚠️</span>
-          WhatsApp obligatoire — pas optionnel
-        </p>
+    <a id="accessLink" href="/acces.html" style="display:none;">Accéder à la formation</a>
+  </div>
 
-        <ol class="step-list" aria-label="Activation de ton accès">
-          <li class="step-card step-card--required">
-            <span class="step-card__num step-card__num--wa" aria-hidden="true">1</span>
-            <div class="step-card__body">
-              <h2 class="step-card__title">Clique sur «&nbsp;Activer mon accès&nbsp;»</h2>
-              <p class="step-card__text">Le bouton ci-dessous ouvre WhatsApp avec ton message déjà préparé.</p>
-            </div>
-          </li>
-          <li class="step-card step-card--required">
-            <span class="step-card__num step-card__num--wa" aria-hidden="true">2</span>
-            <div class="step-card__body">
-              <h2 class="step-card__title">Envoie le message pré-rempli</h2>
-              <p class="step-card__text">
-                Message «&nbsp;BLAKE-ACCESS&nbsp;» + nom + preuve Pay.Genius si demandé. Sans cet envoi, ton accès ne peut
-                pas être activé.
-              </p>
-            </div>
-          </li>
-          <li class="step-card">
-            <span class="step-card__num" aria-hidden="true">3</span>
-            <div class="step-card__body">
-              <h2 class="step-card__title">Tu reçois l’accès à la formation</h2>
-              <p class="step-card__text">
-                Dès validation, on t’envoie le lien et le support sur WhatsApp. Accès rapide après vérification.
-              </p>
-            </div>
-          </li>
-        </ol>
+  <script>
+    async function genererCode(){
+      const params = new URLSearchParams(window.location.search);
+      const reference = params.get("reference");
 
-        <div class="cta-block cta-block--afterpay">
-          <a
-            class="btn btn--whatsapp btn--wide btn--xl js-whatsapp-access"
-            id="activate-access"
-            href="https://wa.me/2250140707502?text=BLAKE-ACCESS%0ANom%20:%20%0ANum%C3%A9ro%20utilis%C3%A9%20pour%20le%20paiement%20(Mobile%20Money)%20:%20%0AMontant%20pay%C3%A9%20:%20%0AEnvoyez%20ici%20la%20capture%20de%20votre%20preuve%20de%20paiement%20:"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Activer mon accès maintenant
-          </a>
-          <p class="cta-block__reassurance">
-            <strong>Accès rapide après validation</strong> — notre équipe traite les demandes en priorité sur WhatsApp.
-          </p>
-          <p class="cta-block__hint">
-            Sans ce passage sur WhatsApp, nous ne pouvons pas activer ton accès, même si le paiement est validé.
-          </p>
-        </div>
-      </section>
-    </main>
+      const resultat = document.getElementById("resultat");
+      const accessLink = document.getElementById("accessLink");
 
-    <footer class="site-footer" role="contentinfo">
-      <p>Formation digitale — Animation IA · Accès activé via WhatsApp après paiement Pay.Genius</p>
-    </footer>
+      if(!reference){
+        resultat.innerHTML = '<p class="error">Référence de paiement introuvable.</p>';
+        return;
+      }
 
-    <script>
-      (function () {
-        const WHATSAPP_ACCESS_URL =
-          "https://wa.me/2250140707502?text=BLAKE-ACCESS%0ANom%20:%20%0ANum%C3%A9ro%20utilis%C3%A9%20pour%20le%20paiement%20(Mobile%20Money)%20:%20%0AMontant%20pay%C3%A9%20:%20%0AEnvoyez%20ici%20la%20capture%20de%20votre%20preuve%20de%20paiement%20:";
-
-        document.querySelectorAll("a.js-whatsapp-access").forEach(function (a) {
-          a.setAttribute("href", WHATSAPP_ACCESS_URL);
-          a.setAttribute("target", "_blank");
-          a.setAttribute("rel", "noopener noreferrer");
+      try{
+        const res = await fetch("/webhook-paygenius", {
+          method: "POST",
+          headers: {"Content-Type":"application/json"},
+          body: JSON.stringify({
+            event: "payment.success",
+            type: "payment.success",
+            data: {
+              reference: reference,
+              amount: 3700,
+              status: "paid",
+              payment_status: "paid"
+            }
+          })
         });
-      })();
-    </script>
-  </body>
+
+        const data = await res.json();
+
+        const code =
+          data.code ||
+          data.access_code ||
+          data?.data?.code ||
+          data?.payment?.code ||
+          data?.result?.code;
+
+        if(!code){
+          resultat.innerHTML = '<p class="error">Code non généré. Vérifiez les logs Render.</p><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+          return;
+        }
+
+        resultat.innerHTML = `
+          <p>Votre code d’accès :</p>
+          <div class="code">${code}</div>
+          <p>Copiez ce code puis cliquez sur le bouton ci-dessous.</p>
+        `;
+
+        accessLink.style.display = "block";
+      }catch(e){
+        resultat.innerHTML = '<p class="error">Erreur serveur : ' + e.message + '</p>';
+      }
+    }
+
+    genererCode();
+  </script>
+</body>
 </html>
