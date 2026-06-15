@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Accès Formation IA</title>
+  <style>
+    body{font-family:Arial,sans-serif;background:#0f172a;color:white;margin:0;padding:40px}
+    .box{max-width:760px;margin:auto;background:#111827;padding:30px;border-radius:18px}
+    input,button{width:100%;padding:16px;margin-top:12px;border-radius:10px;border:0;font-size:16px}
+    button{background:#facc15;color:#111827;font-weight:700;cursor:pointer}
+    .module{background:#1f2937;padding:18px;border-radius:12px;margin-top:14px}
+    #formation{display:none}
+    .error{color:#f87171;margin-top:12px}
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h1>Accès privé à la formation</h1>
+    <p>Entrez votre code d’accès reçu après paiement.</p>
+
+    <input id="code" placeholder="Exemple : BS-ABC123" />
+    <button onclick="verifierCode()">Accéder à la formation</button>
+    <div id="message" class="error"></div>
+
+    <div id="formation">
+      <h2>Formation Animation IA & Montage Vidéo</h2>
+
+      <div class="module">
+        <h3>Module 1 — Introduction</h3>
+        <p>Comprendre le workflow complet de création vidéo IA.</p>
+      </div>
+
+      <div class="module">
+        <h3>Module 2 — Création d’images IA</h3>
+        <p>Prompts, verrouillage d’identité, style, lumière et cadrage.</p>
+      </div>
+
+      <div class="module">
+        <h3>Module 3 — Animation vidéo IA</h3>
+        <p>Transformer une image en vidéo avec mouvements contrôlés.</p>
+      </div>
+
+      <div class="module">
+        <h3>Module 4 — Montage final</h3>
+        <p>Montage, son, transitions, export professionnel.</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    async function verifierCode(){
+      const code = document.getElementById("code").value.trim();
+      const msg = document.getElementById("message");
+      const formation = document.getElementById("formation");
+
+      msg.textContent = "";
+      formation.style.display = "none";
+
+      if(!code){
+        msg.textContent = "Entrez votre code.";
+        return;
+      }
+
+      const res = await fetch("/verify-code?code=" + encodeURIComponent(code));
+      const data = await res.json();
+
+      if(data.success || data.valid){
+        formation.style.display = "block";
+        msg.textContent = "";
+      } else {
+        msg.textContent = "Code invalide ou non reconnu.";
+      }
+    }
+  </script>
+</body>
+</html>
