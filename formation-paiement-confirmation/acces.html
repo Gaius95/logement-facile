@@ -16,8 +16,10 @@
     .video-box{position:relative;width:100%;height:420px;background:#000;border-radius:14px;overflow:hidden;margin-top:15px}
     .video-box iframe{width:100%;height:100%;border:0}
     .video-shield{position:absolute;top:0;left:0;width:100%;height:100%;z-index:5;background:transparent}
-    .controls{display:flex;gap:10px;margin-top:10px}
-    .controls button{width:50%;background:#22c55e;color:white}
+    .controls{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+    .controls button{background:#22c55e;color:white}
+    .speed{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:10px}
+    .speed button{background:#334155;color:white}
     .note{font-size:13px;color:#cbd5e1;margin-top:10px}
   </style>
 </head>
@@ -51,6 +53,13 @@
           <button onclick="playVideo('video1')">Lire</button>
           <button onclick="pauseVideo('video1')">Pause</button>
         </div>
+
+        <div class="speed">
+          <button onclick="setSpeed('video1', 1)">1x</button>
+          <button onclick="setSpeed('video1', 1.25)">1.25x</button>
+          <button onclick="setSpeed('video1', 1.5)">1.5x</button>
+          <button onclick="setSpeed('video1', 2)">2x</button>
+        </div>
       </div>
 
       <div class="module">
@@ -70,6 +79,13 @@
         <div class="controls">
           <button onclick="playVideo('video2')">Lire</button>
           <button onclick="pauseVideo('video2')">Pause</button>
+        </div>
+
+        <div class="speed">
+          <button onclick="setSpeed('video2', 1)">1x</button>
+          <button onclick="setSpeed('video2', 1.25)">1.25x</button>
+          <button onclick="setSpeed('video2', 1.5)">1.5x</button>
+          <button onclick="setSpeed('video2', 2)">2x</button>
         </div>
       </div>
 
@@ -101,12 +117,12 @@
       }
     }
 
-    function ytCommand(id, command){
+    function ytCommand(id, command, args = []){
       const iframe = document.getElementById(id);
       iframe.contentWindow.postMessage(JSON.stringify({
         event: "command",
         func: command,
-        args: []
+        args: args
       }), "*");
     }
 
@@ -116,6 +132,11 @@
 
     function pauseVideo(id){
       ytCommand(id, "pauseVideo");
+    }
+
+    function setSpeed(id, speed){
+      ytCommand(id, "setPlaybackRate", [speed]);
+      playVideo(id);
     }
   </script>
 </body>
