@@ -1,49 +1,43 @@
-<!DOCTYPE html>
+ï»¿<!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Accès Formation IA</title>
+  <title>AccÃ¨s Formation IA</title>
   <style>
     body{font-family:Arial,sans-serif;background:#0f172a;color:white;margin:0;padding:40px}
-    .box{max-width:760px;margin:auto;background:#111827;padding:30px;border-radius:18px}
+    .box{max-width:850px;margin:auto;background:#111827;padding:30px;border-radius:18px}
     input,button{width:100%;padding:16px;margin-top:12px;border-radius:10px;border:0;font-size:16px}
-    button{background:#facc15;color:#111827;font-weight:700;cursor:pointer}
-    .module{background:#1f2937;padding:18px;border-radius:12px;margin-top:14px}
+    button{background:#facc15;color:#111827;font-weight:800;cursor:pointer}
+    .module{background:#1f2937;padding:20px;border-radius:14px;margin-top:18px}
+    .module a{display:block;background:#22c55e;color:white;text-align:center;text-decoration:none;padding:15px;border-radius:10px;font-weight:800;margin-top:12px}
     #formation{display:none}
-    .error{color:#f87171;margin-top:12px}
+    .error{color:#f87171;margin-top:12px;font-weight:700}
+    .success{color:#4ade80;margin-top:12px;font-weight:700}
   </style>
 </head>
 <body>
   <div class="box">
-    <h1>Accès privé à la formation</h1>
-    <p>Entrez votre code d’accès reçu après paiement.</p>
+    <h1>AccÃ¨s privÃ© Ã  la formation</h1>
+    <p>Entrez votre code dâ€™accÃ¨s reÃ§u aprÃ¨s paiement.</p>
 
-    <input id="code" placeholder="Exemple : BS-ABC123" />
-    <button onclick="verifierCode()">Accéder à la formation</button>
+    <input id="code" placeholder="Exemple : BS-LSXNEQ" />
+    <button onclick="verifierCode()">AccÃ©der Ã  la formation</button>
     <div id="message" class="error"></div>
 
     <div id="formation">
-      <h2>Formation Animation IA & Montage Vidéo</h2>
+      <p class="success">AccÃ¨s validÃ©. Voici vos modules.</p>
 
       <div class="module">
-        <h3>Module 1 — Introduction</h3>
-        <p>Comprendre le workflow complet de création vidéo IA.</p>
+        <h2>Module 1 â€” Introduction Ã  lâ€™animation IA</h2>
+        <p>DurÃ©e : 4 minutes</p>
+        <a href="https://youtu.be/fuvh19RA4J4" target="_blank" rel="noopener noreferrer">Voir le Module 1</a>
       </div>
 
       <div class="module">
-        <h3>Module 2 — Création d’images IA</h3>
-        <p>Prompts, verrouillage d’identité, style, lumière et cadrage.</p>
-      </div>
-
-      <div class="module">
-        <h3>Module 3 — Animation vidéo IA</h3>
-        <p>Transformer une image en vidéo avec mouvements contrôlés.</p>
-      </div>
-
-      <div class="module">
-        <h3>Module 4 — Montage final</h3>
-        <p>Montage, son, transitions, export professionnel.</p>
+        <h2>Module 2 â€” CrÃ©ation et animation avec IA</h2>
+        <p>DurÃ©e : 8 minutes</p>
+        <a href="https://youtu.be/lWEjiF-H-z8" target="_blank" rel="noopener noreferrer">Voir le Module 2</a>
       </div>
     </div>
   </div>
@@ -67,7 +61,6 @@
 
       if(data.success || data.valid){
         formation.style.display = "block";
-        msg.textContent = "";
       } else {
         msg.textContent = "Code invalide ou non reconnu.";
       }
