@@ -6,14 +6,19 @@
   <title>Accès Formation IA</title>
   <style>
     body{font-family:Arial,sans-serif;background:#0f172a;color:white;margin:0;padding:40px}
-    .box{max-width:850px;margin:auto;background:#111827;padding:30px;border-radius:18px}
+    .box{max-width:900px;margin:auto;background:#111827;padding:30px;border-radius:18px}
     input,button{width:100%;padding:16px;margin-top:12px;border-radius:10px;border:0;font-size:16px}
     button{background:#facc15;color:#111827;font-weight:800;cursor:pointer}
     .module{background:#1f2937;padding:20px;border-radius:14px;margin-top:18px}
-    .module a{display:block;background:#22c55e;color:white;text-align:center;text-decoration:none;padding:15px;border-radius:10px;font-weight:800;margin-top:12px}
     #formation{display:none}
     .error{color:#f87171;margin-top:12px;font-weight:700}
     .success{color:#4ade80;margin-top:12px;font-weight:700}
+    .video-box{position:relative;width:100%;height:420px;background:#000;border-radius:14px;overflow:hidden;margin-top:15px}
+    .video-box iframe{width:100%;height:100%;border:0}
+    .video-shield{position:absolute;top:0;left:0;width:100%;height:100%;z-index:5;background:transparent}
+    .controls{display:flex;gap:10px;margin-top:10px}
+    .controls button{width:50%;background:#22c55e;color:white}
+    .note{font-size:13px;color:#cbd5e1;margin-top:10px}
   </style>
 </head>
 <body>
@@ -31,14 +36,44 @@
       <div class="module">
         <h2>Module 1 — Introduction à l’animation IA</h2>
         <p>Durée : 4 minutes</p>
-        <iframe width="100%" height="315" src="https://www.youtube.com/embed/fuvh19RA4J4?controls=0&modestbranding=1&rel=0&fs=0&disablekb=1&iv_load_policy=3" title="Module 1" frameborder="0" allowfullscreen></iframe>
+
+        <div class="video-box">
+          <iframe
+            id="video1"
+            src="https://www.youtube.com/embed/fuvh19RA4J4?enablejsapi=1&controls=0&rel=0&fs=0&disablekb=1&modestbranding=1&iv_load_policy=3&playsinline=1&origin=https://logement-facile-3.onrender.com"
+            title="Module 1"
+            allow="autoplay; encrypted-media"
+          ></iframe>
+          <div class="video-shield" oncontextmenu="return false;"></div>
+        </div>
+
+        <div class="controls">
+          <button onclick="playVideo('video1')">Lire</button>
+          <button onclick="pauseVideo('video1')">Pause</button>
+        </div>
       </div>
 
       <div class="module">
         <h2>Module 2 — Création et animation avec IA</h2>
         <p>Durée : 8 minutes</p>
-        <iframe width="100%" height="315" src="https://www.youtube.com/embed/lWEjiF-H-z8?controls=0&modestbranding=1&rel=0&fs=0&disablekb=1&iv_load_policy=3" title="Module 2" frameborder="0" allowfullscreen></iframe>
+
+        <div class="video-box">
+          <iframe
+            id="video2"
+            src="https://www.youtube.com/embed/lWEjiF-H-z8?enablejsapi=1&controls=0&rel=0&fs=0&disablekb=1&modestbranding=1&iv_load_policy=3&playsinline=1&origin=https://logement-facile-3.onrender.com"
+            title="Module 2"
+            allow="autoplay; encrypted-media"
+          ></iframe>
+          <div class="video-shield" oncontextmenu="return false;"></div>
+        </div>
+
+        <div class="controls">
+          <button onclick="playVideo('video2')">Lire</button>
+          <button onclick="pauseVideo('video2')">Pause</button>
+        </div>
       </div>
+
+      <p class="note">Accès réservé aux clients ayant un code valide.</p>
     </div>
   </div>
 
@@ -65,8 +100,23 @@
         msg.textContent = "Code invalide ou non reconnu.";
       }
     }
+
+    function ytCommand(id, command){
+      const iframe = document.getElementById(id);
+      iframe.contentWindow.postMessage(JSON.stringify({
+        event: "command",
+        func: command,
+        args: []
+      }), "*");
+    }
+
+    function playVideo(id){
+      ytCommand(id, "playVideo");
+    }
+
+    function pauseVideo(id){
+      ytCommand(id, "pauseVideo");
+    }
   </script>
 </body>
 </html>
-
-
