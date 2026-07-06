@@ -6,23 +6,72 @@
     <meta name="theme-color" content="#070708" />
     <meta
       name="description"
-      content="Formation animation IA en 3h : vidÃ©os qui vendent, pubs, Facebook. Paiement sÃ©curisÃ© Pay.Genius, accÃ¨s sur WhatsApp aprÃ¨s validation."
+      content="Formation animation IA en 3h : vidéos qui vendent, pubs, Facebook. Paiement sécurisé Pay.Genius, accès sur WhatsApp après validation."
     />
-    <title>Apprends Ã  crÃ©er des vidÃ©os IA qui vendent en 3h â€” formation</title>
+    <title>Apprends à créer des vidéos IA qui vendent en 3h — formation</title>
     <link rel="stylesheet" href="styles.css" />
     <!--
       Tunnel AVANT paiement : cette page = Pay.Genius uniquement.
-      Tunnel APRÃˆS paiement : confirmation.html (configurer lâ€™URL de retour Pay.Genius).
+      Tunnel APRÈS paiement : confirmation.html (configurer l’URL de retour Pay.Genius).
       Prix : constante PRICE dans le script.
     -->
-  </head>
+  
+<!-- FOND-JAUNE-NOIR-START -->
+<style>
+  body::before{
+    content:"";
+    position:fixed;
+    inset:0;
+    background:
+      linear-gradient(rgba(5,5,5,.62), rgba(5,5,5,.78)),
+      url("images/fond-jaune-noir.jpg") center/cover no-repeat;
+    opacity:.38;
+    z-index:-2;
+    pointer-events:none;
+  }
+
+  body{
+    background:#0b0b0b !important;
+  }
+
+  main, section{
+    position:relative;
+    z-index:1;
+  }
+
+  .promo70,
+  .hero-couple,
+  .marketing-band,
+  .section,
+  .cta-block,
+  .step-card,
+  .module,
+  .card{
+    backdrop-filter: blur(8px);
+    background-color: rgba(15,23,42,.74) !important;
+  }
+
+  .btn--checkout,
+  .promo70__btn,
+  .hero-couple__cta{
+    animation: clickPulse 1.4s infinite;
+  }
+
+  @keyframes clickPulse{
+    0%{transform:scale(1)}
+    50%{transform:scale(1.035)}
+    100%{transform:scale(1)}
+  }
+</style>
+<!-- FOND-JAUNE-NOIR-END -->
+</head>
   <body>
     <a class="skip-link" href="#main">Aller au contenu</a>
 
     <header class="site-header" role="banner">
       <div class="site-header__inner">
-        <span class="logo-mark" aria-hidden="true">â—†</span>
-        <span class="logo-text">Formation Â· VidÃ©os IA</span>
+        <span class="logo-mark" aria-hidden="true">◆</span>
+        <span class="logo-text">Formation · Vidéos IA</span>
         <a class="site-header__mini-cta" id="header-pay-cta" href="#paiement" title="Tarif">Payer</a>
       </div>
     </header>
@@ -241,24 +290,24 @@
 <section class="hero-couple">
   <div class="hero-couple__grid">
     <div class="hero-couple__media">
-      <img src="images/couple-plage.jpg" alt="Exemple de résultat visuel et mise en scène créative" />
+      <img src="images/couple-plage.jpg" alt="Exemple de r�sultat visuel et mise en sc�ne cr�ative" />
     </div>
 
     <div class="hero-couple__content">
-      <span class="hero-couple__badge">NOUVEAU • MÉTHODE SIMPLE</span>
+      <span class="hero-couple__badge">NOUVEAU � M�THODE SIMPLE</span>
 
       <h1 class="hero-couple__title">
-        Transforme tes idées en <strong>vidéos IA qui attirent, captivent et vendent</strong>
+        Transforme tes id�es en <strong>vid�os IA qui attirent, captivent et vendent</strong>
       </h1>
 
       <p class="hero-couple__text">
-        Cette formation te montre comment créer des visuels puissants, des scènes qui retiennent l’attention
-        et des vidéos publicitaires qui donnent envie de cliquer.
+        Cette formation te montre comment cr�er des visuels puissants, des sc�nes qui retiennent l�attention
+        et des vid�os publicitaires qui donnent envie de cliquer.
       </p>
 
       <div class="hero-couple__hook">
         <strong>Regarde bien cette image :</strong> si toi aussi tu veux comprendre comment produire ce type de rendu,
-        de narration visuelle et d’impact marketing, tu es exactement au bon endroit.
+        de narration visuelle et d�impact marketing, tu es exactement au bon endroit.
       </div>
 
       <p class="hero-couple__mini">
@@ -271,7 +320,7 @@
         </a>
 
         <a class="hero-couple__ghost" href="#contenu">
-          Voir les détails
+          Voir les d�tails
         </a>
       </div>
     </div>
@@ -279,7 +328,7 @@
 </section>
 
 <div class="marketing-band">
-  <strong>Offre spéciale :</strong> découvre toute la méthode pas à pas et apprends à créer des vidéos IA qui donnent envie de cliquer et d’acheter.
+  <strong>Offre sp�ciale :</strong> d�couvre toute la m�thode pas � pas et apprends � cr�er des vid�os IA qui donnent envie de cliquer et d�acheter.
 </div>
 <!-- HERO-COUPLE-END -->
 
@@ -394,10 +443,10 @@
 <section class="promo70" aria-label="Offre de lancement">
   <div class="promo70__badge">-70%</div>
 
-  <h1>Apprends à créer des vidéos IA qui vendent</h1>
+  <h1>Apprends � cr�er des vid�os IA qui vendent</h1>
 
   <p class="promo70__lead">
-    Formation pratique pour apprendre à créer des vidéos avec l’IA, monter rapidement tes contenus
+    Formation pratique pour apprendre � cr�er des vid�os avec l�IA, monter rapidement tes contenus
     et vendre tes services sur Facebook, WhatsApp et Instagram.
   </p>
 
@@ -408,19 +457,19 @@
     </div>
 
     <div class="promo70__new">
-      <span>Prix promotionnel aujourd’hui</span>
+      <span>Prix promotionnel aujourd�hui</span>
       <strong>3 700 F CFA</strong>
     </div>
   </div>
 
   <div class="promo70__urgent">
-    Offre de lancement limitée : tu économises plus de 70% aujourd’hui.
+    Offre de lancement limit�e : tu �conomises plus de 70% aujourd�hui.
   </div>
 
   <div class="promo70__list">
-    <div class="promo70__item">✔ Accès immédiat après paiement</div>
-    <div class="promo70__item">✔ 2 modules déjà disponibles</div>
-    <div class="promo70__item">✔ Formation simple et pratique</div>
+    <div class="promo70__item">? Acc�s imm�diat apr�s paiement</div>
+    <div class="promo70__item">? 2 modules d�j� disponibles</div>
+    <div class="promo70__item">? Formation simple et pratique</div>
   </div>
 
   <a
@@ -429,26 +478,26 @@
     target="_blank"
     rel="noopener noreferrer"
   >
-    Payer maintenant — 3 700 F CFA
+    Payer maintenant � 3 700 F CFA
   </a>
 </section>
 <!-- OFFRE-70-END -->
 
       <section class="hero hero--sale" aria-labelledby="hero-title">
-        <p class="hero__eyebrow">Formation animation IA Â· 3 heures chrono</p>
+        <p class="hero__eyebrow">Formation animation IA · 3 heures chrono</p>
         <h1 id="hero-title" class="hero__title hero__title--xl">
-          Apprends Ã  crÃ©er des vidÃ©os IA qui vendent en 3h
+          Apprends à créer des vidéos IA qui vendent en 3h
         </h1>
-        <p class="hero__tagline">MÃªme si tu pars de zÃ©ro : vidÃ©os, pubs, vente sur Facebook â€” sans te perdre dans les outils.</p>
+        <p class="hero__tagline">Même si tu pars de zéro : vidéos, pubs, vente sur Facebook — sans te perdre dans les outils.</p>
         <p class="hero__lead hero__lead--wide">
-          Une mÃ©thode <strong>simple</strong>, <strong>guidÃ©e</strong> et <strong>rapide</strong> pour dÃ©bloquer ta crÃ©ation et tes ventes en ligne, sans formation interminable.
+          Une méthode <strong>simple</strong>, <strong>guidée</strong> et <strong>rapide</strong> pour débloquer ta création et tes ventes en ligne, sans formation interminable.
         </p>
         <ul class="hero__proof" aria-label="En bref">
-          <li><span class="hero__proof-dot" aria-hidden="true"></span> VidÃ©os IA utilisables</li>
+          <li><span class="hero__proof-dot" aria-hidden="true"></span> Vidéos IA utilisables</li>
           <li><span class="hero__proof-dot" aria-hidden="true"></span> Pubs qui accrochent</li>
           <li><span class="hero__proof-dot" aria-hidden="true"></span> Facebook pour vendre</li>
         </ul>
-        <p class="hero__micro hero__micro--social">+ de 100 personnes dÃ©jÃ  formÃ©es</p>
+        <p class="hero__micro hero__micro--social">+ de 100 personnes déjà formées</p>
         <div class="hero__cta-row">
           <div class="payment-actions payment-actions--hero">
           <a
@@ -458,16 +507,16 @@
             target="_blank"
             rel="noopener noreferrer"
           >
-            Payer maintenant â€” <span data-price-cta>3 700 F CFA</span>
+            Payer maintenant — <span data-price-cta>3 700 F CFA</span>
           </a>
           <p class="payment-actions__hint">
-            AprÃ¨s paiement, Pay.Genius tâ€™envoie sur la page de confirmation pour activer ton accÃ¨s.
+            Après paiement, Pay.Genius t’envoie sur la page de confirmation pour activer ton accès.
           </p>
           </div>
           <a class="btn btn--ghost" href="#contenu">Voir ce que tu obtiens</a>
         </div>
         <p class="hero__micro">
-          Paiement sÃ©curisÃ© via Pay.Genius. AprÃ¨s validation, page de confirmation pour activer ton accÃ¨s. Â· Pas de jargon
+          Paiement sécurisé via Pay.Genius. Après validation, page de confirmation pour activer ton accès. · Pas de jargon
           inutile.
         </p>
       </section>
@@ -475,7 +524,7 @@
       <aside class="urgent-banner" role="status" aria-live="polite">
         <p class="urgent-banner__title">Important</p>
         <p class="urgent-banner__text">
-          AccÃ¨s immÃ©diat aprÃ¨s validation â€” support WhatsApp actif
+          Accès immédiat après validation — support WhatsApp actif
         </p>
         <div class="payment-actions payment-actions--banner">
         <a
@@ -485,14 +534,14 @@
           target="_blank"
           rel="noopener noreferrer"
         >
-          Payer maintenant â€” <span data-price-cta>3 700 F CFA</span>
+          Payer maintenant — <span data-price-cta>3 700 F CFA</span>
         </a>
         <p class="payment-actions__hint">
-          AprÃ¨s paiement, Pay.Genius tâ€™envoie sur la page de confirmation pour activer ton accÃ¨s.
+          Après paiement, Pay.Genius t’envoie sur la page de confirmation pour activer ton accès.
         </p>
         </div>
         <p class="urgent-banner__sub">
-          WhatsApp sert uniquement Ã  <strong>recevoir ton accÃ¨s</strong> une fois le paiement validÃ© (redirection ou lien
+          WhatsApp sert uniquement à <strong>recevoir ton accès</strong> une fois le paiement validé (redirection ou lien
           sur la page de confirmation).
         </p>
       </aside>
@@ -502,16 +551,16 @@
         <p class="section-lead">Si une de ces phrases te parle, cette formation est faite pour toi.</p>
         <ul class="problem-grid">
           <li class="problem-card">
-            <span class="problem-card__icon" aria-hidden="true">ðŸŽ¬</span>
-            <p class="problem-card__text"><strong>Tu ne sais pas crÃ©er des vidÃ©os</strong> â€” et tu nâ€™as pas envie de passer des semaines sur des tutos dÃ©cousus.</p>
+            <span class="problem-card__icon" aria-hidden="true">🎬</span>
+            <p class="problem-card__text"><strong>Tu ne sais pas créer des vidéos</strong> — et tu n’as pas envie de passer des semaines sur des tutos décousus.</p>
           </li>
           <li class="problem-card">
-            <span class="problem-card__icon" aria-hidden="true">ðŸ“‰</span>
-            <p class="problem-card__text"><strong>Tu ne vends pas en ligne</strong> : peu de messages, peu de demandes, pas de mÃ©thode claire.</p>
+            <span class="problem-card__icon" aria-hidden="true">📉</span>
+            <p class="problem-card__text"><strong>Tu ne vends pas en ligne</strong> : peu de messages, peu de demandes, pas de méthode claire.</p>
           </li>
           <li class="problem-card">
-            <span class="problem-card__icon" aria-hidden="true">ðŸ”’</span>
-            <p class="problem-card__text"><strong>Tu es bloquÃ©</strong> face aux outils IA : par oÃ¹ commencer, quoi montrer, comment en faire une pub ?</p>
+            <span class="problem-card__icon" aria-hidden="true">🔒</span>
+            <p class="problem-card__text"><strong>Tu es bloqué</strong> face aux outils IA : par où commencer, quoi montrer, comment en faire une pub ?</p>
           </li>
         </ul>
       </section>
@@ -520,11 +569,11 @@
         <h2 id="solution-title" class="section-title">La solution</h2>
         <div class="solution-panel">
           <p class="solution-panel__lead">
-            Une formation <strong>simple</strong>, <strong>guidÃ©e</strong> et <strong>rapide</strong> : tu avances Ã©tape par Ã©tape jusquâ€™Ã  des crÃ©ations prÃªtes Ã  publier.
+            Une formation <strong>simple</strong>, <strong>guidée</strong> et <strong>rapide</strong> : tu avances étape par étape jusqu’à des créations prêtes à publier.
           </p>
           <ul class="solution-chips" aria-label="Les 3 piliers">
             <li class="solution-chip">Simple</li>
-            <li class="solution-chip">GuidÃ©e</li>
+            <li class="solution-chip">Guidée</li>
             <li class="solution-chip">Rapide (3 h)</li>
           </ul>
         </div>
@@ -532,27 +581,27 @@
 
       <section class="section" id="contenu" aria-labelledby="gain-title">
         <h2 id="gain-title" class="section-title">Ce que tu obtiens</h2>
-        <p class="section-lead">Ã€ la fin, tu sais concrÃ¨tement quoi faire sur ton tÃ©lÃ©phone ou ton ordi.</p>
+        <p class="section-lead">À la fin, tu sais concrètement quoi faire sur ton téléphone ou ton ordi.</p>
         <ol class="gain-list">
           <li class="gain-card">
-            <span class="gain-card__check" aria-hidden="true">âœ“</span>
+            <span class="gain-card__check" aria-hidden="true">✓</span>
             <div>
-              <h3 class="gain-card__title">CrÃ©er des vidÃ©os IA</h3>
-              <p class="gain-card__text">Des vidÃ©os crÃ©dibles, alignÃ©es avec ton offre, sans chaÃ®ne YouTube de 40 h Ã  ingÃ©rer.</p>
+              <h3 class="gain-card__title">Créer des vidéos IA</h3>
+              <p class="gain-card__text">Des vidéos crédibles, alignées avec ton offre, sans chaîne YouTube de 40 h à ingérer.</p>
             </div>
           </li>
           <li class="gain-card">
-            <span class="gain-card__check" aria-hidden="true">âœ“</span>
+            <span class="gain-card__check" aria-hidden="true">✓</span>
             <div>
               <h3 class="gain-card__title">Faire des pubs</h3>
-              <p class="gain-card__text">Un message court qui accroche et donne envie dâ€™Ã©crire ou dâ€™acheter.</p>
+              <p class="gain-card__text">Un message court qui accroche et donne envie d’écrire ou d’acheter.</p>
             </div>
           </li>
           <li class="gain-card">
-            <span class="gain-card__check" aria-hidden="true">âœ“</span>
+            <span class="gain-card__check" aria-hidden="true">✓</span>
             <div>
               <h3 class="gain-card__title">Vendre sur Facebook</h3>
-              <p class="gain-card__text">Relier tes crÃ©ations Ã  une prÃ©sence simple : publier, relancer, convertir.</p>
+              <p class="gain-card__text">Relier tes créations à une présence simple : publier, relancer, convertir.</p>
             </div>
           </li>
         </ol>
@@ -560,15 +609,15 @@
 
       <section class="section section--price" id="paiement" aria-labelledby="price-title">
         <h2 id="price-title" class="section-title">Tarif unique</h2>
-        <p class="section-lead section-lead--tight">Un seul paiement. Pas dâ€™abonnement cachÃ©.</p>
+        <p class="section-lead section-lead--tight">Un seul paiement. Pas d’abonnement caché.</p>
         <div class="price-card">
-          <p class="price-card__label">Formation Â« VidÃ©os IA qui vendent Â»</p>
+          <p class="price-card__label">Formation « Vidéos IA qui vendent »</p>
           <p class="price-card__amount">
             <span class="price-card__value" id="price-amount">3 700</span>
             <span class="price-card__currency" id="price-currency">F CFA</span>
           </p>
           <p class="price-card__note">
-            AccÃ¨s digital Â· Formation complÃ¨te Â· Paiement sÃ©curisÃ© via Pay.Genius. AprÃ¨s validation, page de confirmation.
+            Accès digital · Formation complète · Paiement sécurisé via Pay.Genius. Après validation, page de confirmation.
           </p>
           <div class="payment-actions payment-actions--card">
           <a
@@ -578,50 +627,50 @@
             target="_blank"
             rel="noopener noreferrer"
           >
-            Payer maintenant â€” <span data-price-cta>3 700 F CFA</span>
+            Payer maintenant — <span data-price-cta>3 700 F CFA</span>
           </a>
           <p class="payment-actions__hint">
-            AprÃ¨s paiement, Pay.Genius tâ€™envoie sur la page de confirmation pour activer ton accÃ¨s.
+            Après paiement, Pay.Genius t’envoie sur la page de confirmation pour activer ton accès.
           </p>
           </div>
           <ul class="trust-strip" aria-label="Garanties">
-            <li class="trust-strip__item">AccÃ¨s sur WhatsApp aprÃ¨s paiement validÃ© (Pay.Genius)</li>
-            <li class="trust-strip__item">Support rÃ©actif</li>
-            <li class="trust-strip__item">Parcours dÃ©butant</li>
+            <li class="trust-strip__item">Accès sur WhatsApp après paiement validé (Pay.Genius)</li>
+            <li class="trust-strip__item">Support réactif</li>
+            <li class="trust-strip__item">Parcours débutant</li>
           </ul>
         </div>
       </section>
 
       <section class="section reassurance" aria-labelledby="reassurance-title">
-        <h2 id="reassurance-title" class="section-title section-title--small">On enlÃ¨ve le stress</h2>
+        <h2 id="reassurance-title" class="section-title section-title--small">On enlève le stress</h2>
         <ul class="pill-grid">
           <li class="pill pill--premium">
-            <span class="pill__icon" aria-hidden="true">âš¡</span>
+            <span class="pill__icon" aria-hidden="true">⚡</span>
             <span
-              ><strong>AccÃ¨s aprÃ¨s validation</strong> : paiement Pay.Genius, puis activation sur la page de
+              ><strong>Accès après validation</strong> : paiement Pay.Genius, puis activation sur la page de
               confirmation.</span
             >
           </li>
           <li class="pill pill--premium">
-            <span class="pill__icon" aria-hidden="true">ðŸ’¬</span>
+            <span class="pill__icon" aria-hidden="true">💬</span>
             <span><strong>Support WhatsApp</strong> pour tes questions pendant la formation.</span>
           </li>
           <li class="pill pill--premium">
-            <span class="pill__icon" aria-hidden="true">ðŸŒ±</span>
-            <span><strong>Formation simple dÃ©butant</strong> : pas de jargon inutile, on va droit au rÃ©sultat.</span>
+            <span class="pill__icon" aria-hidden="true">🌱</span>
+            <span><strong>Formation simple débutant</strong> : pas de jargon inutile, on va droit au résultat.</span>
           </li>
         </ul>
       </section>
 
       <section class="section section--tunnel-preview" aria-labelledby="tunnel-title">
-        <h2 id="tunnel-title" class="section-title section-title--small">Comment Ã§a se passe</h2>
-        <ol class="step-list" aria-label="Parcours dâ€™achat">
+        <h2 id="tunnel-title" class="section-title section-title--small">Comment ça se passe</h2>
+        <ol class="step-list" aria-label="Parcours d’achat">
           <li class="step-card">
             <span class="step-card__num" aria-hidden="true">1</span>
             <div class="step-card__body">
               <h3 class="step-card__title">Tu paies sur cette page</h3>
               <p class="step-card__text">
-                Un seul bouton Â«&nbsp;Payer maintenant&nbsp;Â» â€” redirection sÃ©curisÃ©e vers Pay.Genius.
+                Un seul bouton «&nbsp;Payer maintenant&nbsp;» — redirection sécurisée vers Pay.Genius.
               </p>
             </div>
           </li>
@@ -630,8 +679,8 @@
             <div class="step-card__body">
               <h3 class="step-card__title">Page de confirmation</h3>
               <p class="step-card__text">
-                AprÃ¨s validation, Pay.Genius tâ€™envoie sur la
-                <a href="confirmation.html">page de confirmation</a> pour activer ton accÃ¨s sur WhatsApp.
+                Après validation, Pay.Genius t’envoie sur la
+                <a href="confirmation.html">page de confirmation</a> pour activer ton accès sur WhatsApp.
               </p>
             </div>
           </li>
@@ -641,7 +690,7 @@
       <section class="help" aria-labelledby="help-title">
         <h2 id="help-title" class="section-title section-title--small">Une question avant de payer ?</h2>
         <div class="help-card">
-          <p>Ã‰cris-nous sur WhatsApp : on te rÃ©pond dÃ¨s que possible, sans engagement.</p>
+          <p>Écris-nous sur WhatsApp : on te répond dès que possible, sans engagement.</p>
           <a
             class="btn btn--secondary"
             href="https://wa.me/2250140707502?text=Question%20sur%20la%20formation%20vid%C3%A9os%20IA%20%3A%20"
@@ -655,17 +704,17 @@
     </main>
 
     <footer class="site-footer" role="contentinfo">
-      <p>Formation digitale â€” Animation IA Â· Paiement Pay.Genius Â· AccÃ¨s aprÃ¨s validation via WhatsApp</p>
+      <p>Formation digitale — Animation IA · Paiement Pay.Genius · Accès après validation via WhatsApp</p>
     </footer>
 
     <div class="sticky-pay" role="region" aria-label="Paiement rapide">
       <p class="sticky-pay__urgent">
-        AccÃ¨s immÃ©diat aprÃ¨s validation â€” support WhatsApp actif
+        Accès immédiat après validation — support WhatsApp actif
       </p>
       <div class="sticky-pay__inner">
         <div class="sticky-pay__price">
           <span class="sticky-pay__label" id="sticky-price-label">3 700 F CFA</span>
-          <span class="sticky-pay__sub">Formation complÃ¨te Â· Pay.Genius</span>
+          <span class="sticky-pay__sub">Formation complète · Pay.Genius</span>
         </div>
         <a
           class="btn btn--checkout btn--sticky btn--pulse pay-link-direct"
@@ -682,7 +731,7 @@
     <script>
       (function () {
         const PRICE = "3 700 F CFA";
-        /** Ã€ remplacer par lâ€™URL de checkout fournie par Pay.Genius. Tant que vide : ancre #paiement. */
+        /** À remplacer par l’URL de checkout fournie par Pay.Genius. Tant que vide : ancre #paiement. */
         const PAY_GENIUS_CHECKOUT_URL =
           "https://geniuspay.ci/product/animation-ia-et-montage-video-professionnel-PCC5Uq";
         const m = String(PRICE).match(/^(.+)\s+(F\s*CFA)$/i);
@@ -726,6 +775,8 @@
     </script>
   </body>
 </html>
+
+
 
 
 
