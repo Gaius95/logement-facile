@@ -28,6 +28,261 @@
     </header>
 
     <main id="main" class="main" tabindex="-1">
+<!-- HERO-COUPLE-START -->
+<style>
+  .hero-couple {
+    max-width: 1150px;
+    margin: 28px auto 24px auto;
+    padding: 26px;
+    border-radius: 28px;
+    background:
+      radial-gradient(circle at top left, rgba(255,140,66,.22), transparent 30%),
+      radial-gradient(circle at top right, rgba(255,214,10,.16), transparent 28%),
+      linear-gradient(135deg, #0f172a, #111827 42%, #1e293b 100%);
+    color: #ffffff;
+    box-shadow: 0 22px 60px rgba(0,0,0,.34);
+    border: 1px solid rgba(255,255,255,.08);
+    overflow: hidden;
+    animation: heroFadeUp .8s ease-out both;
+  }
+
+  .hero-couple__grid {
+    display: grid;
+    grid-template-columns: 1.05fr .95fr;
+    gap: 24px;
+    align-items: center;
+  }
+
+  .hero-couple__media {
+    position: relative;
+  }
+
+  .hero-couple__media img {
+    width: 100%;
+    display: block;
+    border-radius: 22px;
+    box-shadow: 0 18px 40px rgba(0,0,0,.35);
+    animation: floatingImage 4s ease-in-out infinite;
+  }
+
+  .hero-couple__badge {
+    display: inline-block;
+    margin-bottom: 12px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #ff7a18, #ffb347);
+    color: #111827;
+    font-weight: 900;
+    font-size: 14px;
+    letter-spacing: .4px;
+  }
+
+  .hero-couple__title {
+    margin: 0 0 14px 0;
+    font-size: clamp(30px, 4vw, 54px);
+    line-height: 1.04;
+    font-weight: 1000;
+  }
+
+  .hero-couple__title strong {
+    color: #ffd54a;
+  }
+
+  .hero-couple__text {
+    font-size: 19px;
+    line-height: 1.7;
+    color: #e5e7eb;
+    margin-bottom: 18px;
+  }
+
+  .hero-couple__hook {
+    font-size: 18px;
+    line-height: 1.7;
+    color: #ffffff;
+    background: rgba(255,255,255,.07);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 18px;
+    padding: 16px 18px;
+    margin-bottom: 18px;
+  }
+
+  .hero-couple__hook strong {
+    color: #7CFF90;
+  }
+
+  .hero-couple__mini {
+    font-size: 17px;
+    font-weight: 800;
+    color: #ffd54a;
+    margin-bottom: 16px;
+  }
+
+  .hero-couple__actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .hero-couple__cta,
+  .hero-couple__ghost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 56px;
+    padding: 0 22px;
+    border-radius: 16px;
+    text-decoration: none;
+    font-weight: 900;
+    transition: transform .18s ease, box-shadow .18s ease, background .18s ease;
+  }
+
+  .hero-couple__cta {
+    background: linear-gradient(90deg, #22c55e, #4ade80);
+    color: #0b1220;
+    box-shadow: 0 12px 24px rgba(34,197,94,.26);
+  }
+
+  .hero-couple__ghost {
+    background: rgba(255,255,255,.08);
+    color: #ffffff;
+    border: 1px solid rgba(255,255,255,.12);
+  }
+
+  .hero-couple__cta:hover,
+  .hero-couple__ghost:hover {
+    transform: translateY(-2px);
+  }
+
+  .marketing-band {
+    max-width: 1150px;
+    margin: 0 auto 26px auto;
+    padding: 16px 18px;
+    border-radius: 18px;
+    background: linear-gradient(90deg, rgba(255,184,0,.12), rgba(255,255,255,.05));
+    border: 1px solid rgba(255,214,74,.22);
+    color: #ffffff;
+    text-align: center;
+    font-size: 17px;
+    font-weight: 800;
+    animation: heroFadeUp 1s ease-out both;
+  }
+
+  .marketing-band strong {
+    color: #ffd54a;
+  }
+
+  .btn--checkout,
+  .site-header__mini-cta,
+  .promo70__btn {
+    animation: softBuzz 1.8s infinite;
+    transform-origin: center;
+  }
+
+  .btn--checkout:hover,
+  .site-header__mini-cta:hover,
+  .promo70__btn:hover {
+    animation-play-state: paused;
+    transform: scale(1.03);
+  }
+
+  body {
+    background:
+      radial-gradient(circle at top left, rgba(255,153,51,.10), transparent 24%),
+      radial-gradient(circle at top right, rgba(255,214,10,.08), transparent 18%),
+      linear-gradient(180deg, #0f172a 0%, #111827 40%, #172033 100%);
+  }
+
+  @keyframes softBuzz {
+    0%, 100% { transform: translateX(0) scale(1); }
+    4% { transform: translateX(-1px) rotate(-.5deg); }
+    8% { transform: translateX(1px) rotate(.5deg); }
+    12% { transform: translateX(-1px) rotate(-.4deg); }
+    16% { transform: translateX(1px) rotate(.4deg); }
+    20% { transform: translateX(0) scale(1.02); }
+  }
+
+  @keyframes floatingImage {
+    0%,100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+
+  @keyframes heroFadeUp {
+    from {
+      opacity: 0;
+      transform: translateY(18px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @media (max-width: 860px) {
+    .hero-couple__grid {
+      grid-template-columns: 1fr;
+    }
+
+    .hero-couple {
+      padding: 18px;
+    }
+
+    .hero-couple__title {
+      font-size: 34px;
+    }
+
+    .hero-couple__text,
+    .hero-couple__hook,
+    .hero-couple__mini {
+      font-size: 16px;
+    }
+  }
+</style>
+
+<section class="hero-couple">
+  <div class="hero-couple__grid">
+    <div class="hero-couple__media">
+      <img src="images/couple-plage.jpg" alt="Exemple de résultat visuel et mise en scène créative" />
+    </div>
+
+    <div class="hero-couple__content">
+      <span class="hero-couple__badge">NOUVEAU • MÉTHODE SIMPLE</span>
+
+      <h1 class="hero-couple__title">
+        Transforme tes idées en <strong>vidéos IA qui attirent, captivent et vendent</strong>
+      </h1>
+
+      <p class="hero-couple__text">
+        Cette formation te montre comment créer des visuels puissants, des scènes qui retiennent l’attention
+        et des vidéos publicitaires qui donnent envie de cliquer.
+      </p>
+
+      <div class="hero-couple__hook">
+        <strong>Regarde bien cette image :</strong> si toi aussi tu veux comprendre comment produire ce type de rendu,
+        de narration visuelle et d’impact marketing, tu es exactement au bon endroit.
+      </div>
+
+      <p class="hero-couple__mini">
+        Clique en dessous de cette image pour tout comprendre.
+      </p>
+
+      <div class="hero-couple__actions">
+        <a class="hero-couple__cta btn--checkout" href="https://geniuspay.ci/product/animation-ia-et-montage-video-professionnel-PCC5Uq" target="_blank" rel="noopener noreferrer">
+          Je veux apprendre maintenant
+        </a>
+
+        <a class="hero-couple__ghost" href="#contenu">
+          Voir les détails
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="marketing-band">
+  <strong>Offre spéciale :</strong> découvre toute la méthode pas à pas et apprends à créer des vidéos IA qui donnent envie de cliquer et d’acheter.
+</div>
+<!-- HERO-COUPLE-END -->
+
 <!-- OFFRE-70-START -->
 <style>
   .promo70{
@@ -471,6 +726,7 @@
     </script>
   </body>
 </html>
+
 
 
 
